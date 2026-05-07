@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jogo Tipo Termo</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Fonte mais moderna */
+        background-color: #121213;
+        color: #ffffff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 0;
+        padding: 20px;
+        overflow-x: hidden;
+      }
+
+      h1 {
+        border-bottom: 1px solid #3a3a3c;
+        padding-bottom: 10px;
+        letter-spacing: 4px;
+        margin-bottom: 20px;
+        font-size: 2.5rem;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      }
+
+      #message {
+        font-size: 1.2rem;
+        font-weight: bold;
+        min-height: 24px;
+        margin-bottom: 10px;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+
+      /* ================= Tabuleiro e Quadrados ================= */
+      #board {
+        display: grid;
+        grid-template-rows: repeat(6, 1fr);
+        gap: 6px;
+        margin-bottom: 30px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+
+      .tile {
+        width: 62px;
+        height: 62px;
+        border: 2px solid #3a3a3c;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 2.2rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 8px; /* Bordas levemente arredondadas */
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+        transition: border-color 0.2s, transform 0.1s;
+      }
+
+      /* Efeito quando o jogador seleciona a letra (Cursor) */
+      .tile.selected {
+        border-color: #ffffff;
+        transform: scale(1.1); /* Dá um zoom maior */
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        z-index: 10;
+      }
+
+      /* Cores do Jogo com Animação de "Virada" 3D */
+      .correct {
+        background-color: #538d4e !important;
+        border-color: #538d4e !important;
+        color: white;
+        animation: flipIn 0.6s ease-in-out forwards;
+      } 
+      .present {
+        background-color: #b59f3b !important;
+        border-color: #b59f3b !important;
+        color: white;
+        animation: flipIn 0.6s ease-in-out forwards;
+      } 
+      .absent {
+        background-color: #3a3a3c !important;
+        border-color: #3a3a3c !important;
+        color: white;
+        animation: flipIn 0.6s ease-in-out forwards;
+      } 
+
+      /* ================= Teclado Virtual ================= */
+      #keyboard {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .key-row {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      .key {
+        background-color: #818384;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+        text-transform: uppercase;
+        flex: 1;
+        height: 58px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.2rem;
+        user-select: none;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      }
+
+      .key:hover {
+        filter: brightness(1.2);
+        transform: translateY(-2px);
+      }
+
+      .key:active {
+        transform: scale(0.9) translateY(2px);
+        box-shadow: none;
+      }
+
+      .key.large {
+        flex: 1.5;
+        font-size: 1rem;
+      }
+
+      /* ================= Animações Especiais ================= */
+      /* Virada das Letras */
+      @keyframes flipIn {
+        0% { transform: rotateX(-90deg); opacity: 0.5; }
+        100% { transform: rotateX(0deg); opacity: 1; }
+      }
+
+      /* Vitória: Pulinho feliz */
+      @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-30px); }
+        60% { transform: translateY(-15px); }
+      }
+      .win-anim { animation: bounce 1s ease; }
+
+      /* Derrota: Tremida na tela */
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+        20%, 40%, 60%, 80% { transform: translateX(8px); }
+      }
+      .lose-anim { animation: shake 0.5s ease; }
+
+
+      /* ================= Interface e Ranking ================= */
+      #auth-container { display: flex; }
+      #board, #keyboard, #user-info { display: none !important; }
+
+      /* Estilizando o Ranking para ficar com visual de pódio */
+      #ranking-container {
+        background: linear-gradient(145deg, #1e1e1e, #121213);
+        border-radius: 15px;
+        padding: 20px 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        border: 1px solid #333;
+      }
+
+      #ranking-list {
+        list-style: none; /* Tira os números padrão chatos */
+        padding: 0;
+        margin: 0;
+      }
+
+      #ranking-list li {
+        background: #2a2a2c;
+        margin-bottom: 10px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        border-left: 5px solid #538d4e; /* Cor base da lateral */
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      #ranking-list li:hover {
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 6px 15px rgba(83, 141, 78, 0.4);
+        background: #3a3a3c;
+      }
+
+      /* Efeito especial para o Top 1, Top 2 e Top 3 */
+      #ranking-list li:nth-child(1) { border-left-color: #FFD700; font-weight: bold;} /* Ouro */
+      #ranking-list li:nth-child(2) { border-left-color: #C0C0C0; } /* Prata */
+      #ranking-list li:nth-child(3) { border-left-color: #CD7F32; } /* Bronze */
+      
+      /* Adicionando medalhas usando pseudo-elementos via CSS! */
+      #ranking-list li:nth-child(1)::after { content: " 🥇"; font-size: 1.5rem; }
+      #ranking-list li:nth-child(2)::after { content: " 🥈"; font-size: 1.5rem; }
+      #ranking-list li:nth-child(3)::after { content: " 🥉"; font-size: 1.5rem; }
+</style>
+  </head>
+  <body>
+    <h1>TERMO</h1>
+    <div
+      id="auth-container"
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+      "
+    >
+      <h3 style="margin: 0; color: #ffffff">Login no Termo</h3>
+
+      <input
+        type="text"
+        id="username"
+        placeholder="Nome de usuário"
+        style="
+          padding: 10px;
+          width: 250px;
+          border-radius: 5px;
+          border: 1px solid #3a3a3c;
+          background: #121213;
+          color: white;
+        "
+      />
+      <input
+        type="password"
+        id="password"
+        placeholder="Sua senha"
+        style="
+          padding: 10px;
+          width: 250px;
+          border-radius: 5px;
+          border: 1px solid #3a3a3c;
+          background: #121213;
+          color: white;
+        "
+      />
+
+      <div style="display: flex; gap: 10px">
+        <button
+          id="btnLogin"
+          style="
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #3a3a3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+          "
+        >
+          Entrar
+        </button>
+        <button
+          id="btnCadastro"
+          style="
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #145ecc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+          "
+        >
+          Criar Conta
+        </button>
+      </div>
+      <div
+        id="auth-message"
+        style="
+          color: #f7ee04;
+          font-weight: bold;
+          text-align: center;
+          max-width: 250px;
+        "
+      ></div>
+    </div>
+
+    <div id="user-info" style="display: none; align-items: center; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+        <div id="welcome-msg" style="font-size: 1.2rem; font-weight: bold; color: #538d4e;"></div>
+        
+        <div style="font-size: 1rem; color: #b59f3b;">
+            Aura: <span id="user-aura" style="font-weight: bold; color: white;">0</span> | 
+            Hoje: <span id="daily-count" style="font-weight: bold; color: white;">0</span>/5
+        </div>
+
+        <button id="btnLogout" style="padding: 5px 15px; cursor: pointer; background-color: #818384; color: white; border: none; border-radius: 5px;">Sair</button>
+    </div>
+
+    <div id="ranking-container" style="display: none; margin-top: 40px; border-top: 1px solid #3a3a3c; padding-top: 20px; width: 100%; max-width: 350px;">
+        <h3 style="text-align: center; color: #b59f3b; margin-top: 0;">🏆 Top 10 Aura 🏆</h3>
+        <ol id="ranking-list" style="padding-left: 20px; font-size: 1.1rem; line-height: 1.8;"></ol>
+    </div>
+
+    <button
+      id="btnLogout"
+      style="
+        display: none;
+        margin-bottom: 20px;
+        padding: 5px 15px;
+        cursor: pointer;
+      "
+    >
+      Sair
+    </button>
+    <div id="message"></div>
+    <div id="board"></div>
+    <div id="keyboard"></div>
+
+    <script src="PALAVRAS_TERMO.js"></script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
