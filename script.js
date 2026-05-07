@@ -7,7 +7,6 @@ import {
     signOut,
     updateProfile 
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-// NOVO: Importações do Banco de Dados Firestore
 import { 
     getFirestore, doc, setDoc, getDoc, updateDoc, 
     collection, query, orderBy, limit, getDocs 
@@ -24,7 +23,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app); // Inicializa o Banco de Dados
+const db = getFirestore(app);
 
 // Referências HTML (Login e Jogo)
 const authContainer = document.getElementById("auth-container");
@@ -41,13 +40,11 @@ const btnLogout = document.getElementById("btnLogout");
 const boardElement = document.getElementById("board");
 const keyboardDiv = document.getElementById("keyboard");
 
-// NOVO: Referências HTML (Estatísticas e Ranking)
 const rankingContainer = document.getElementById("ranking-container");
 const userAuraSpan = document.getElementById("user-aura");
 const dailyCountSpan = document.getElementById("daily-count");
 const rankingList = document.getElementById("ranking-list");
 
-// Variáveis Globais de Controle
 let isUserLoggedIn = false;
 let currentUserDocRef = null;
 let userData = null;
@@ -64,24 +61,46 @@ onAuthStateChanged(auth, async (user) => {
         userInfo.style.setProperty('display', 'flex', 'important');
         rankingContainer.style.setProperty('display', 'block', 'important');
         
-        welcomeMsg.innerText = `Olá, ${user.displayName || "Jogador"}!`;
+        // 1. O GRANDE TRUQUE: Extrai o nome de usuário direto do e-mail!
+        // Pega "joao@meutermo.com" e transforma em "joao"
+        const nomeCorreto = user.email.split('@')[0];
+        
+        welcomeMsg.innerText = `Olá, ${nomeCorreto}!`;
 
-        // Lógica do Firestore: Buscar ou Criar perfil do usuário
+        // Busca os dados no Firestore
         currentUserDocRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(currentUserDocRef);
-        const today = new Date().toISOString().split('T')[0]; // Pega a data atual no formato YYYY-MM-DD
+        const today = new Date().toISOString().split('T')[0];
 
         if (!userSnap.exists()) {
-            // Primeiro acesso do usuário: cria o perfil no banco zerado
-            userData = { displayName: user.displayName, aura: 0, lastPlayedDate: today, wordsPlayedToday: 0 };
+            // Primeiro acesso do usuário
+            userData = { displayName: nomeCorreto, aura: 0, lastPlayedDate: today, wordsPlayedToday: 0 };
             await setDoc(currentUserDocRef, userData);
         } else {
             userData = userSnap.data();
-            // Verifica se virou o dia para resetar as palavras
+            let needsUpdate = false;
+            
+            // 2. CONSERTO AUTOMÁTICO DO BANCO DE DADOS
+            // Se estiver null ou vazio, ele troca pro nome correto que extraímos do e-mail
+            if (!userData.displayName || userData.displayName === "null" || userData.displayName === null) {
+                userData.displayName = nomeCorreto; 
+                needsUpdate = true; // Avisa o sistema que precisa salvar a correção no banco
+            }
+
+            // Verifica as tentativas do dia
             if (userData.lastPlayedDate !== today) {
                 userData.wordsPlayedToday = 0;
                 userData.lastPlayedDate = today;
-                await updateDoc(currentUserDocRef, { wordsPlayedToday: 0, lastPlayedDate: today });
+                needsUpdate = true;
+            }
+            
+            // Se o nome estava null ou o dia virou, ele atualiza o Firebase silenciosamente
+            if (needsUpdate) {
+                await updateDoc(currentUserDocRef, { 
+                    displayName: userData.displayName, // Salva o nome sem o null!
+                    wordsPlayedToday: userData.wordsPlayedToday, 
+                    lastPlayedDate: userData.lastPlayedDate
+                });
             }
         }
 
@@ -102,7 +121,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- EVENTOS DOS BOTÕES ---
 btnCadastro.addEventListener("click", () => {
     const user = usernameInput.value;
     const pass = passwordInput.value;
@@ -142,10 +160,6 @@ btnLogin.addEventListener("click", () => {
 
 btnLogout.addEventListener("click", () => signOut(auth));
 
-// ==========================================
-// FUNÇÕES DO BANCO DE DADOS E RANKING
-// ==========================================
-
 function atualizarTelaEstatisticas() {
     if(userAuraSpan) userAuraSpan.innerText = userData.aura;
     if(dailyCountSpan) dailyCountSpan.innerText = userData.wordsPlayedToday;
@@ -161,7 +175,11 @@ async function carregarRanking() {
     querySnapshot.forEach((doc) => {
         const data = doc.data();
         let li = document.createElement("li");
-        li.innerHTML = `<strong>${data.displayName}</strong>: ${data.aura} aura`;
+        
+        // CORREÇÃO NO RANKING: Tira os 'null' antigos da tela
+        let nomeExibido = (data.displayName && data.displayName !== "null") ? data.displayName : "Anônimo";
+        
+        li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
         rankingList.appendChild(li);
     });
 }
@@ -169,6 +187,9 @@ async function carregarRanking() {
 // ==========================================
 // LÓGICA DO JOGO TERMO
 // ==========================================
+
+// IMPORTANTE: COLOQUE A SUA LISTA const words = [...] AQUI!!!
+// const words = ["SAGAZ", "ÂMAGO", "TERMO", ...];
 
 let targetWord = "";
 let targetWordNormalized = "";
@@ -179,7 +200,6 @@ let gameOver = false;
 
 const removeAcentos = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
-// Cria o tabuleiro no HTML (só roda 1 vez ao carregar a página)
 for (let r = 0; r < 6; r++) {
     let row = document.createElement("div");
     row.className = "row";
@@ -195,7 +215,6 @@ for (let r = 0; r < 6; r++) {
     boardElement.appendChild(row);
 }
 
-// Cria o teclado virtual no HTML (só roda 1 vez ao carregar a página)
 const keyboardLayout = [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
     ["A", "S", "D", "F", "G", "H", "J", "K", "L", "⌫"],
@@ -221,7 +240,6 @@ keyboardLayout.forEach((row) => {
     keyboardDiv.appendChild(rowDiv);
 });
 
-// Reseta o jogo para a próxima palavra
 function resetarTabuleiro() {
     targetWord = words[Math.floor(Math.random() * words.length)];
     targetWordNormalized = removeAcentos(targetWord);
@@ -238,11 +256,13 @@ function resetarTabuleiro() {
     document.querySelectorAll('.key').forEach(key => {
         key.classList.remove("correct", "present", "absent");
     });
+    
+    // Limpa as animações para a próxima rodada
+    document.getElementById("board").classList.remove("win-anim", "lose-anim");
 
     setActiveColumn(0);
 }
 
-// Checa se o usuário pode jogar hoje e exibe o tabuleiro
 function verificarEIniciarJogo() {
     if (userData.wordsPlayedToday >= 5) {
         boardElement.style.setProperty('display', 'none', 'important');
@@ -256,17 +276,14 @@ function verificarEIniciarJogo() {
     }
 }
 
-// Finaliza a partida e atualiza o Ranking
 async function finalizarPartida(ganhou) {
     if (!userData) return;
     
-    // Atualiza pontuação e jogadas
     userData.aura += ganhou ? 10 : -7;
     userData.wordsPlayedToday += 1;
 
     atualizarTelaEstatisticas();
 
-    // Salva no banco de dados
     await updateDoc(currentUserDocRef, {
         aura: userData.aura,
         wordsPlayedToday: userData.wordsPlayedToday
@@ -274,13 +291,11 @@ async function finalizarPartida(ganhou) {
 
     carregarRanking(); 
 
-    // Espera 3 segundos e inicia nova palavra (ou avisa limite)
     setTimeout(() => {
         verificarEIniciarJogo();
     }, 3000);
 }
 
-// Lógica Visual do Cursor
 function setActiveColumn(col) {
     for (let i = 0; i < 5; i++) {
         let tile = document.getElementById(`tile-${currentAttempt}-${i}`);
@@ -310,7 +325,6 @@ function handleInput(key) {
     if (key === "Enter") {
         let guess = board[currentAttempt].join("");
         
-        // NOVO: Remove acentos, tira espaços invisíveis e converte tudo para maiúsculo
         let isValidWord = words.some(w => removeAcentos(w).trim().toUpperCase() === guess.toUpperCase());
         
         if (guess.length === 5 && isValidWord) {
@@ -339,7 +353,6 @@ function handleInput(key) {
     }
 }
 
-// Teclado Físico
 document.addEventListener("keydown", (e) => {
     if (!isUserLoggedIn) return;
     if (e.target.tagName === "INPUT") return;
@@ -351,7 +364,6 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
-// Verifica a tentativa
 function checkAttempt() {
     let guess = board[currentAttempt].join("");
     let targetArray = targetWordNormalized.split(""); 
@@ -408,14 +420,14 @@ function checkAttempt() {
     if (guess === targetWordNormalized) {
         gameOver = true;
         showMessage("Acertou! +10 Aura 🟢", "#538d4e");
-        finalizarPartida(true); // Registra vitória no Ranking
+        finalizarPartida(true); 
         document.getElementById("board").classList.add("win-anim");
     } else {
         currentAttempt++;
         if (currentAttempt === 6) {
             gameOver = true;
             showMessage(`Fim! A palavra era ${targetWord}. -7 Aura 🔴`, "red");
-            finalizarPartida(false); // Registra derrota no Ranking
+            finalizarPartida(false); 
             document.getElementById("board").classList.add("lose-anim");
         } else {
             setActiveColumn(0);
