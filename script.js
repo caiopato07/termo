@@ -1,15 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-import { 
-    getAuth, 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, 
-    onAuthStateChanged, 
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
     signOut,
-    updateProfile 
+    updateProfile
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { 
-    getFirestore, doc, setDoc, getDoc, updateDoc, 
-    collection, query, orderBy, limit, getDocs 
+import {
+    getFirestore, doc, setDoc, getDoc, updateDoc,
+    collection, query, orderBy, limit, getDocs
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -55,16 +55,16 @@ const formatEmail = (user) => `${user.trim().toLowerCase()}@meutermo.com`;
 // --- LÓGICA DE INTERFACE E BANCO DE DADOS ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        isUserLoggedIn = true; 
-        
+        isUserLoggedIn = true;
+
         authContainer.style.setProperty('display', 'none', 'important');
         userInfo.style.setProperty('display', 'flex', 'important');
         rankingContainer.style.setProperty('display', 'block', 'important');
-        
+
         // 1. O GRANDE TRUQUE: Extrai o nome de usuário direto do e-mail!
         // Pega "joao@meutermo.com" e transforma em "joao"
         const nomeCorreto = user.email.split('@')[0];
-        
+
         welcomeMsg.innerText = `Olá, ${nomeCorreto}!`;
 
         // Busca os dados no Firestore
@@ -79,11 +79,11 @@ onAuthStateChanged(auth, async (user) => {
         } else {
             userData = userSnap.data();
             let needsUpdate = false;
-            
+
             // 2. CONSERTO AUTOMÁTICO DO BANCO DE DADOS
             // Se estiver null ou vazio, ele troca pro nome correto que extraímos do e-mail
             if (!userData.displayName || userData.displayName === "null" || userData.displayName === null) {
-                userData.displayName = nomeCorreto; 
+                userData.displayName = nomeCorreto;
                 needsUpdate = true; // Avisa o sistema que precisa salvar a correção no banco
             }
 
@@ -93,12 +93,12 @@ onAuthStateChanged(auth, async (user) => {
                 userData.lastPlayedDate = today;
                 needsUpdate = true;
             }
-            
+
             // Se o nome estava null ou o dia virou, ele atualiza o Firebase silenciosamente
             if (needsUpdate) {
-                await updateDoc(currentUserDocRef, { 
+                await updateDoc(currentUserDocRef, {
                     displayName: userData.displayName, // Salva o nome sem o null!
-                    wordsPlayedToday: userData.wordsPlayedToday, 
+                    wordsPlayedToday: userData.wordsPlayedToday,
                     lastPlayedDate: userData.lastPlayedDate
                 });
             }
@@ -109,14 +109,14 @@ onAuthStateChanged(auth, async (user) => {
         verificarEIniciarJogo();
 
     } else {
-        isUserLoggedIn = false; 
-        
+        isUserLoggedIn = false;
+
         authContainer.style.setProperty('display', 'flex', 'important');
         userInfo.style.setProperty('display', 'none', 'important');
         boardElement.style.setProperty('display', 'none', 'important');
         keyboardDiv.style.setProperty('display', 'none', 'important');
-        if(rankingContainer) rankingContainer.style.setProperty('display', 'none', 'important');
-        
+        if (rankingContainer) rankingContainer.style.setProperty('display', 'none', 'important');
+
         passwordInput.value = "";
     }
 });
@@ -124,13 +124,13 @@ onAuthStateChanged(auth, async (user) => {
 btnCadastro.addEventListener("click", () => {
     const user = usernameInput.value;
     const pass = passwordInput.value;
-    
+
     if (user.length < 3) {
         authMessage.style.color = "red";
         authMessage.innerText = "Usuário muito curto!";
-        return; 
+        return;
     }
-    
+
     createUserWithEmailAndPassword(auth, formatEmail(user), pass)
         .then((userCredential) => {
             return updateProfile(userCredential.user, { displayName: user });
@@ -139,7 +139,7 @@ btnCadastro.addEventListener("click", () => {
             return signOut(auth);
         })
         .then(() => {
-            authMessage.style.color = "#538d4e"; 
+            authMessage.style.color = "#538d4e";
             authMessage.innerText = "Conta criada com sucesso! Por favor, clique em Entrar.";
             passwordInput.value = "";
         })
@@ -161,27 +161,90 @@ btnLogin.addEventListener("click", () => {
 btnLogout.addEventListener("click", () => signOut(auth));
 
 function atualizarTelaEstatisticas() {
-    if(userAuraSpan) userAuraSpan.innerText = userData.aura;
-    if(dailyCountSpan) dailyCountSpan.innerText = userData.wordsPlayedToday;
+    if (userAuraSpan) userAuraSpan.innerText = userData.aura;
+    if (dailyCountSpan) dailyCountSpan.innerText = userData.wordsPlayedToday;
 }
-
 async function carregarRanking() {
-    if(!rankingList) return;
-    
+    if (!rankingList) return;
+
+    // Continua buscando os 10 melhores
     const q = query(collection(db, "users"), orderBy("aura", "desc"), limit(10));
     const querySnapshot = await getDocs(q);
-    
-    rankingList.innerHTML = ""; 
+
+    rankingList.innerHTML = "";
+    let index = 0;
+
     querySnapshot.forEach((doc) => {
         const data = doc.data();
         let li = document.createElement("li");
-        
-        // CORREÇÃO NO RANKING: Tira os 'null' antigos da tela
+
         let nomeExibido = (data.displayName && data.displayName !== "null") ? data.displayName : "Anônimo";
-        
+
+        // Cuidado: aqui você deve manter a estrutura HTML que já está usando para ficar bonito com o seu CSS.
+        // Se você mudou algo no HTML do "li" para pôr as medalhas, mantenha a sua versão!
         li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
+
+        // NOVO: Se for o 6º lugar ou abaixo, esconde e adiciona a classe "rank-extra"
+        if (index >= 5) {
+            li.classList.add("rank-extra");
+            li.style.display = "none"; // Esconde por padrão
+        }
+
         rankingList.appendChild(li);
+        index++;
     });
+
+    // NOVO: Lógica do botão "Ver Mais"
+    let btnToggle = document.getElementById("btn-toggle-ranking");
+
+    // Se o botão ainda não existir, nós o criamos
+    if (!btnToggle) {
+        btnToggle = document.createElement("button");
+        btnToggle.id = "btn-toggle-ranking";
+
+        // Alguns estilos diretos no JS para ele combinar com o jogo (você pode mudar depois no CSS)
+        btnToggle.style.marginTop = "15px";
+        btnToggle.style.padding = "8px 15px";
+        btnToggle.style.cursor = "pointer";
+        btnToggle.style.borderRadius = "5px";
+        btnToggle.style.border = "none";
+        btnToggle.style.backgroundColor = "#538d4e"; // Verde do Termo
+        btnToggle.style.color = "white";
+        btnToggle.style.fontWeight = "bold";
+        btnToggle.style.width = "100%";
+        btnToggle.style.transition = "0.2s";
+
+        // Adiciona o botão logo abaixo da lista de ranking
+        rankingContainer.appendChild(btnToggle);
+    }
+
+    // Só mostra o botão se tivermos mais de 5 jogadores cadastrados
+
+    btnToggle.style.display = "block";
+    btnToggle.innerText = "Ver Top 10 ▼";
+
+    // Ação de clicar no botão
+    btnToggle.onclick = () => {
+
+        const extras = rankingList.querySelectorAll(".rank-extra");
+
+        // Verifica se o primeiro extra está escondido
+        const isHidden = extras[0].style.display === "none";
+
+        extras.forEach(item => {
+            // Se estava escondido, tira o "none" (volta ao original do CSS), se não, esconde
+            item.style.display = isHidden ? "" : "none";
+        });
+
+        // Muda o texto e a setinha do botão
+        btnToggle.innerText = isHidden ? "Ocultar ▲" : "Ver Top 10 ▼";
+        btnToggle.style.backgroundColor = isHidden ? "#3a3a3c" : "#538d4e"; // Fica cinza quando expande
+
+        const top10 = document.getElementById('topranking');
+        top10.innerText = isHidden ? "🏆 Top 10 Aura 🏆" : "🏆 Top 5 Aura 🏆";
+
+
+    }
 }
 
 // ==========================================
@@ -194,7 +257,7 @@ async function carregarRanking() {
 let targetWord = "";
 let targetWordNormalized = "";
 let currentAttempt = 0;
-let activeCol = 0; 
+let activeCol = 0;
 let board = Array.from({ length: 6 }, () => Array(5).fill(""));
 let gameOver = false;
 
@@ -251,12 +314,12 @@ function resetarTabuleiro() {
     document.getElementById("message").innerText = "";
     document.querySelectorAll('.tile').forEach(tile => {
         tile.innerText = "";
-        tile.className = "tile"; 
+        tile.className = "tile";
     });
     document.querySelectorAll('.key').forEach(key => {
         key.classList.remove("correct", "present", "absent");
     });
-    
+
     // Limpa as animações para a próxima rodada
     document.getElementById("board").classList.remove("win-anim", "lose-anim");
 
@@ -278,7 +341,7 @@ function verificarEIniciarJogo() {
 
 async function finalizarPartida(ganhou) {
     if (!userData) return;
-    
+
     userData.aura += ganhou ? 10 : -7;
     userData.wordsPlayedToday += 1;
 
@@ -289,7 +352,7 @@ async function finalizarPartida(ganhou) {
         wordsPlayedToday: userData.wordsPlayedToday
     });
 
-    carregarRanking(); 
+    carregarRanking();
 
     setTimeout(() => {
         verificarEIniciarJogo();
@@ -299,11 +362,11 @@ async function finalizarPartida(ganhou) {
 function setActiveColumn(col) {
     for (let i = 0; i < 5; i++) {
         let tile = document.getElementById(`tile-${currentAttempt}-${i}`);
-        if(tile) tile.classList.remove('selected');
+        if (tile) tile.classList.remove('selected');
     }
     activeCol = col;
     let activeTile = document.getElementById(`tile-${currentAttempt}-${activeCol}`);
-    if(activeTile) activeTile.classList.add('selected');
+    if (activeTile) activeTile.classList.add('selected');
 }
 
 function updateTile(row, col, letter) {
@@ -314,7 +377,7 @@ function showMessage(msg, color = "white") {
     const msgEl = document.getElementById("message");
     msgEl.innerText = msg;
     msgEl.style.color = color;
-    if(msg !== "Você já jogou suas 5 palavras hoje! Volte amanhã.") {
+    if (msg !== "Você já jogou suas 5 palavras hoje! Volte amanhã.") {
         setTimeout(() => { msgEl.innerText = ""; msgEl.style.color = "white"; }, 3000);
     }
 }
@@ -324,15 +387,15 @@ function handleInput(key) {
 
     if (key === "Enter") {
         let guess = board[currentAttempt].join("");
-        
+
         let isValidWord = words.some(w => removeAcentos(w).trim().toUpperCase() === guess.toUpperCase());
-        
+
         if (guess.length === 5 && isValidWord) {
             checkAttempt();
         } else {
             showMessage("Palavra inválida ou incompleta!", "red");
         }
-    }else if (key === "Backspace") {
+    } else if (key === "Backspace") {
         if (board[currentAttempt][activeCol] !== "") {
             board[currentAttempt][activeCol] = "";
             updateTile(currentAttempt, activeCol, "");
@@ -344,10 +407,10 @@ function handleInput(key) {
     } else if (/^[A-Z]$/.test(key)) {
         board[currentAttempt][activeCol] = key;
         updateTile(currentAttempt, activeCol, key);
-        
+
         let nextCol = activeCol;
         while (nextCol < 4 && board[currentAttempt][nextCol] !== "") nextCol++;
-        
+
         if (board[currentAttempt][nextCol] === "") setActiveColumn(nextCol);
         else if (activeCol < 4) setActiveColumn(activeCol + 1);
     }
@@ -359,14 +422,14 @@ document.addEventListener("keydown", (e) => {
 
     if (e.key === "Enter" || e.key === "Backspace") {
         handleInput(e.key);
-    } else if (/^[a-zA-Z]$/.test(e.key) && e.key.length === 1) { 
+    } else if (/^[a-zA-Z]$/.test(e.key) && e.key.length === 1) {
         handleInput(e.key.toUpperCase());
     }
 });
 
 function checkAttempt() {
     let guess = board[currentAttempt].join("");
-    let targetArray = targetWordNormalized.split(""); 
+    let targetArray = targetWordNormalized.split("");
     let guessArray = guess.split("");
 
     let tileColors = ["absent", "absent", "absent", "absent", "absent"];
@@ -395,10 +458,10 @@ function checkAttempt() {
         const letter = guessArray[i];
         const colorClass = tileColors[i];
         const tile = document.getElementById(`tile-${currentAttempt}-${i}`);
-        
+
         tile.classList.remove('selected');
         tile.classList.add(colorClass);
-        
+
         if (colorClass === "correct" && targetWord[i] !== letter) {
             updateTile(currentAttempt, i, targetWord[i]);
         }
@@ -420,14 +483,14 @@ function checkAttempt() {
     if (guess === targetWordNormalized) {
         gameOver = true;
         showMessage("Acertou! +10 Aura 🟢", "#538d4e");
-        finalizarPartida(true); 
+        finalizarPartida(true);
         document.getElementById("board").classList.add("win-anim");
     } else {
         currentAttempt++;
         if (currentAttempt === 6) {
             gameOver = true;
             showMessage(`Fim! A palavra era ${targetWord}. -7 Aura 🔴`, "red");
-            finalizarPartida(false); 
+            finalizarPartida(false);
             document.getElementById("board").classList.add("lose-anim");
         } else {
             setActiveColumn(0);
