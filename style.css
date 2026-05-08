@@ -39,19 +39,21 @@ h1 {
     font-size: 1.2rem;
     font-weight: bold;
     min-height: 24px;
-    margin-bottom: 15px;
+    margin-bottom: 40px;
     text-align: center;
     background: rgba(255, 255, 255, 0.1);
-    padding: 8px 15px;
-    border-radius: 8px;
+    padding: 9px 20px;
+    border-radius: 9px;
     backdrop-filter: blur(4px); /* Efeito de vidro */
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease, opacity 0.5s ease-out;
 }
+
 
 #message:not(:empty) {
     opacity: 1;
     transform: translateY(-5px);
+    margin-bottom: 20px;
 }
 
 /* ================= Tabuleiro e Quadrados ================= */
@@ -248,7 +250,7 @@ button:active { transform: translateY(1px); }
     border: 1px solid #333;
     width: 100%;
     max-width: 350px;
-    margin-top: 30px;
+    margin-top: 60px;
 }
 
 /* ================= Painel do Usuário (Header) ================= */

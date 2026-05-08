@@ -158,7 +158,11 @@ btnLogin.addEventListener("click", () => {
         .catch(() => authMessage.innerText = "Usuário ou senha incorretos.");
 });
 
-btnLogout.addEventListener("click", () => signOut(auth));
+btnLogout.addEventListener("click", () => {
+    signOut(auth)
+    const msg = document.getElementById("message");
+    msg.remove();
+});
 
 function atualizarTelaEstatisticas() {
     if (userAuraSpan) userAuraSpan.innerText = userData.aura;
@@ -241,7 +245,7 @@ async function carregarRanking() {
         btnToggle.style.backgroundColor = isHidden ? "#3a3a3c" : "#538d4e"; // Fica cinza quando expande
 
         const top10 = document.getElementById('topranking');
-        top10.innerText = isHidden ? "🏆 Top 10 Aura 🏆" : "🏆 Top 5 Aura 🏆";
+        top10.innerText = isHidden ? " Top 10 Aura " : " Top 5 Aura ";
 
 
     }
@@ -325,16 +329,31 @@ function resetarTabuleiro() {
 
     setActiveColumn(0);
 }
-
 function verificarEIniciarJogo() {
+    const msgEl = document.getElementById("message");
+
     if (userData.wordsPlayedToday >= 5) {
         boardElement.style.setProperty('display', 'none', 'important');
         keyboardDiv.style.setProperty('display', 'none', 'important');
-        document.getElementById("message").innerText = "Você já jogou suas 5 palavras hoje! Volte amanhã.";
-        document.getElementById("message").style.color = "#b59f3b";
+
+        msgEl.innerText = "Você já jogou suas 5 palavras hoje! Volte amanhã.";
+        msgEl.style.color = "#da385b";
+
+        // =========================================
+        // MÁGICA AQUI: Força o espaçamento pelo JS!
+        // =========================================
+        msgEl.style.display = "block"; // Transforma em bloco para aceitar margem
+        msgEl.style.marginTop = "40px"; // Empurra a mensagem pra longe do ranking
+        msgEl.style.fontSize = "1.2rem"; // Opcional: deixa a letra um pouco maior
+
     } else {
         boardElement.style.setProperty('display', 'grid', 'important');
         keyboardDiv.style.setProperty('display', 'flex', 'important');
+
+        // Limpa as margens caso seja um novo dia e ele vá jogar
+        msgEl.style.marginTop = "0px";
+        msgEl.style.display = "";
+
         resetarTabuleiro();
     }
 }
@@ -419,11 +438,11 @@ function handleInput(key) {
         }
 
         // Se achou algum quadrado vazio na linha, move o cursor para ele
-        if (firstEmptyCol !== -1 && activeCol==4) {
+        if (firstEmptyCol !== -1 && activeCol == 4) {
             setActiveColumn(firstEmptyCol);
         }
-        else if(firstEmptyCol !== -1){
-            setActiveColumn(activeCol+1)
+        else if (firstEmptyCol !== -1) {
+            setActiveColumn(activeCol + 1)
         }
         // Se firstEmptyCol continuar sendo -1, significa que a linha está cheia!
         // O cursor simplesmente fica onde está, esperando você apertar Backspace ou Enter.
@@ -443,11 +462,11 @@ document.addEventListener("keydown", (e) => {
         if (activeCol < 4) {
             setActiveColumn(activeCol + 1);
         }
-    } 
+    }
     // Lógica normal de apagar e confirmar
     else if (e.key === "Enter" || e.key === "Backspace") {
         handleInput(e.key);
-    } 
+    }
     // Lógica normal de digitar letras
     else if (/^[a-zA-Z]$/.test(e.key) && e.key.length === 1) {
         handleInput(e.key.toUpperCase());
