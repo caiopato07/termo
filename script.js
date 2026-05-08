@@ -388,7 +388,7 @@ function handleInput(key) {
     if (key === "Enter") {
         let guess = board[currentAttempt].join("");
 
-        let isValidWord = words.some(w => removeAcentos(w).trim().toUpperCase() === guess.toUpperCase());
+        let isValidWord = wordsAc.some(w => removeAcentos(w).trim().toUpperCase() === guess.toUpperCase()) || words.some(w => removeAcentos(w).trim().toUpperCase() === guess.toUpperCase());
 
         if (guess.length === 5 && isValidWord) {
             checkAttempt();
