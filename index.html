@@ -66,18 +66,20 @@
         "></div>
   </div>
 
-  <div id="user-info"
-    style="display: none; align-items: center; flex-direction: column; gap: 10px; margin-bottom: 20px;">
-    <div id="welcome-msg" style="font-size: 1.2rem; font-weight: bold; color: #c43e9c;"></div>
-
-    <div style="font-size: 1rem; color: #943076;">
-      Aura: <span id="user-aura" style="font-weight: bold; color: white;">0</span> |
-      Hoje: <span id="daily-count" style="font-weight: bold; color: white;">0</span>/5
+  <div id="user-info">
+    <h2 id="welcome-msg">Olá!</h2>
+    
+    <div class="user-stats">
+        <div class="stat-badge aura">
+            <span id="user-aura">0</span> Aura
+        </div>
+        <div class="stat-badge daily">
+            <span id="daily-count">0</span>/5 Hoje
+        </div>
     </div>
 
-    <button id="btnLogout"
-      style="padding: 5px 15px; cursor: pointer; background-color: #818384; color: white; border: none; border-radius: 5px;">Sair</button>
-  </div>
+    <button id="btnLogout">SAIR</button>
+</div>
 
   <div id="ranking-container"
     style="display: none; margin-top: 40px; border-top: 1px solid #3a3a3c; padding-top: 20px; width: 100%; max-width: 350px;">

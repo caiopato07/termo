@@ -1,0 +1,381 @@
+/* ================= Variáveis Globais (Facilita muito a vida!) ================= */
+:root {
+    --bg-main: #121213;
+    --bg-panel: rgba(26, 26, 27, 0.8);
+    --text-main: #ffffff;
+    --border-color: #3a3a3c;
+    --green-termo: #538d4e;
+    --yellow-termo: #b59f3b;
+    --gray-termo: #818384;
+}
+
+/* ================= Corpo e Tipografia ================= */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-main);
+    /* Novo fundo com um leve brilho no centro topo */
+    background-image: radial-gradient(circle at 50% -20%, #2a2a2c 0%, var(--bg-main) 70%);
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+h1 {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 10px;
+    letter-spacing: 6px;
+    margin-bottom: 25px;
+    font-size: 2.8rem;
+    font-weight: 800;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+}
+
+#message {
+    font-size: 1.2rem;
+    font-weight: bold;
+    min-height: 24px;
+    margin-bottom: 15px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 15px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px); /* Efeito de vidro */
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+#message:not(:empty) {
+    opacity: 1;
+    transform: translateY(-5px);
+}
+
+/* ================= Tabuleiro e Quadrados ================= */
+#board {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 8px;
+    margin-bottom: 30px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+}
+
+.tile {
+    width: 62px;
+    height: 62px;
+    border: 2px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.02);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.2rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 10px; /* Mais arredondado */
+    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+/* Efeito quando o jogador seleciona a letra (Cursor) */
+.tile.selected {
+    border-color: #ffffff;
+    transform: scale(1.08);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    z-index: 10;
+}
+
+/* Cores do Jogo com Animação de "Virada" 3D e Brilho */
+.correct {
+    background-color: var(--green-termo) !important;
+    border-color: var(--green-termo) !important;
+    color: white;
+    box-shadow: 0 0 15px rgba(83, 141, 78, 0.4) !important;
+    animation: flipIn 0.6s ease-in-out forwards;
+}
+
+.present {
+    background-color: var(--yellow-termo) !important;
+    border-color: var(--yellow-termo) !important;
+    color: white;
+    box-shadow: 0 0 15px rgba(181, 159, 59, 0.4) !important;
+    animation: flipIn 0.6s ease-in-out forwards;
+}
+
+.absent {
+    background-color: var(--border-color) !important;
+    border-color: var(--border-color) !important;
+    color: white;
+    box-shadow: none !important;
+    animation: flipIn 0.6s ease-in-out forwards;
+}
+
+/* ================= Teclado Virtual ================= */
+#keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.key-row {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.key {
+    background-color: var(--gray-termo);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    flex: 1;
+    height: 58px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    user-select: none;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5); /* Efeito 3D nas teclas */
+}
+
+.key:hover {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+}
+
+.key:active {
+    transform: scale(0.95) translateY(4px);
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0.5); /* Tecla "afunda" */
+}
+
+.key.large {
+    flex: 1.5;
+    font-size: 1rem;
+}
+
+/* ================= Animações Especiais ================= */
+@keyframes flipIn {
+    0% { transform: rotateX(-90deg); opacity: 0.5; }
+    100% { transform: rotateX(0deg); opacity: 1; }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-30px); }
+    60% { transform: translateY(-15px); }
+}
+.win-anim { animation: bounce 1s ease; }
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+    20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+.lose-anim { animation: shake 0.5s ease; }
+
+/* ================= Interface de Login e Botões ================= */
+#auth-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: var(--bg-panel);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+}
+
+input {
+    padding: 12px;
+    width: 250px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-main);
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    outline: none;
+}
+
+input:focus {
+    border-color: var(--green-termo);
+    box-shadow: 0 0 10px rgba(83, 141, 78, 0.3);
+}
+
+button {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#btnLogin { background-color: var(--border-color); color: white; }
+#btnCadastro { background-color: #145ecc; color: white; }
+#btnLogout { background-color: #ef4444; color: white; margin-top: 10px; }
+#btn-toggle-ranking { background-color: var(--green-termo); color: white; width: 100%; margin-top: 15px; }
+
+button:hover { filter: brightness(1.15); transform: translateY(-2px); }
+button:active { transform: translateY(1px); }
+
+/* ================= Ranking ================= */
+#board, #keyboard, #user-info {
+    display: none !important;
+}
+
+#ranking-container {
+    background: linear-gradient(145deg, #1e1e1e, #121213);
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    border: 1px solid #333;
+    width: 100%;
+    max-width: 350px;
+    margin-top: 30px;
+}
+
+/* ================= Painel do Usuário (Header) ================= */
+#user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    background: var(--bg-panel);
+    padding: 20px 30px;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    margin-bottom: 25px;
+    width: 100%;
+    max-width: 350px; /* Fica alinhado com o tamanho do Ranking */
+}
+
+/* Nome do Jogador com Efeito Gradiente Premium */
+/* Nome do Jogador com Efeito Gradiente Premium */
+#welcome-msg {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(90deg, #4ade80, #3b82f6);
+    -webkit-background-clip: text;
+    background-clip: text; /* <--- Adicionamos o padrão aqui! */
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(74, 222, 128, 0.2);
+    letter-spacing: 1px;
+}
+
+/* Contêiner das pílulas de status */
+.user-stats {
+    display: flex;
+    gap: 15px;
+    font-size: 0.95rem;
+    font-weight: bold;
+}
+
+/* Estilo das pílulas (badges) */
+.stat-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px; /* Bordas bem redondas */
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+}
+
+/* Aura ganha um tom dourado/brilhante */
+.stat-badge.aura {
+    border-color: var(--yellow-termo);
+    color: #fde047;
+    box-shadow: inset 0 0 10px rgba(181, 159, 59, 0.2);
+}
+
+/* Diárias ganham o verde clássico */
+.stat-badge.daily {
+    border-color: var(--green-termo);
+    color: #86efac;
+    box-shadow: inset 0 0 10px rgba(83, 141, 78, 0.2);
+}
+
+/* Botão de sair repaginado */
+#btnLogout {
+    margin-top: 5px;
+    background: linear-gradient(145deg, #ef4444, #dc2626);
+    border: 1px solid #b91c1c;
+    padding: 8px 30px;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+
+#btnLogout:hover {
+    background: linear-gradient(145deg, #f87171, #ef4444);
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+#ranking-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#ranking-list li {
+    background: #2a2a2c;
+    margin-bottom: 12px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-left: 5px solid var(--green-termo);
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+#ranking-list li:hover {
+    transform: translateX(5px);
+    box-shadow: 0 6px 15px rgba(83, 141, 78, 0.3);
+    background: #3a3a3c;
+}
+
+/* Efeito especial para o Top 1, Top 2 e Top 3 com Gradientes */
+#ranking-list li:nth-child(1) {
+    border-left-color: #FFD700;
+    font-weight: bold;
+    background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, #2a2a2c 100%);
+}
+
+#ranking-list li:nth-child(2) {
+    border-left-color: #C0C0C0;
+    background: linear-gradient(90deg, rgba(192,192,192,0.1) 0%, #2a2a2c 100%);
+}
+
+#ranking-list li:nth-child(3) {
+    border-left-color: #CD7F32;
+    background: linear-gradient(90deg, rgba(205,127,50,0.1) 0%, #2a2a2c 100%);
+}
+
+/* Adicionando medalhas usando pseudo-elementos via CSS! */
+#ranking-list li:nth-child(1)::after { content: " 🥇"; font-size: 1.5rem; filter: drop-shadow(0 0 5px rgba(255,215,0,0.5)); }
+#ranking-list li:nth-child(2)::after { content: " 🥈"; font-size: 1.5rem; }
+#ranking-list li:nth-child(3)::after { content: " 🥉"; font-size: 1.5rem; }
