@@ -405,24 +405,51 @@ function handleInput(key) {
             updateTile(currentAttempt, activeCol, "");
         }
     } else if (/^[A-Z]$/.test(key)) {
+        // Coloca a letra no quadrado atual
         board[currentAttempt][activeCol] = key;
         updateTile(currentAttempt, activeCol, key);
 
-        let nextCol = activeCol;
-        while (nextCol < 4 && board[currentAttempt][nextCol] !== "") nextCol++;
+        // NOVA LÓGICA: Varre a linha inteira (do 0 ao 4) procurando o primeiro buraco
+        let firstEmptyCol = -1;
+        for (let i = 0; i < 5; i++) {
+            if (board[currentAttempt][i] === "") {
+                firstEmptyCol = i;
+                break; // Achou o primeiro vazio? Para de procurar!
+            }
+        }
 
-        if (board[currentAttempt][nextCol] === "") setActiveColumn(nextCol);
-        else if (activeCol < 4) setActiveColumn(activeCol + 1);
+        // Se achou algum quadrado vazio na linha, move o cursor para ele
+        if (firstEmptyCol !== -1 && activeCol==4) {
+            setActiveColumn(firstEmptyCol);
+        }
+        else if(firstEmptyCol !== -1){
+            setActiveColumn(activeCol+1)
+        }
+        // Se firstEmptyCol continuar sendo -1, significa que a linha está cheia!
+        // O cursor simplesmente fica onde está, esperando você apertar Backspace ou Enter.
     }
 }
 
 document.addEventListener("keydown", (e) => {
     if (!isUserLoggedIn) return;
-    if (e.target.tagName === "INPUT") return;
+    if (e.target.tagName === "INPUT") return; // Evita bugar quando o usuário está digitando o login
 
-    if (e.key === "Enter" || e.key === "Backspace") {
+    // Movimentação pelas setinhas do teclado
+    if (e.key === "ArrowLeft") {
+        if (activeCol > 0) {
+            setActiveColumn(activeCol - 1);
+        }
+    } else if (e.key === "ArrowRight") {
+        if (activeCol < 4) {
+            setActiveColumn(activeCol + 1);
+        }
+    } 
+    // Lógica normal de apagar e confirmar
+    else if (e.key === "Enter" || e.key === "Backspace") {
         handleInput(e.key);
-    } else if (/^[a-zA-Z]$/.test(e.key) && e.key.length === 1) {
+    } 
+    // Lógica normal de digitar letras
+    else if (/^[a-zA-Z]$/.test(e.key) && e.key.length === 1) {
         handleInput(e.key.toUpperCase());
     }
 });
