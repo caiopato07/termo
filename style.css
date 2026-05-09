@@ -34,28 +34,36 @@ h1 {
     font-weight: 800;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
 }
-
 #message {
-    font-size: 1.2rem;
+    position: fixed;
+    top: 15%; /* Fica na parte de cima da tela, longe do teclado */
+    left: 50%;
+    transform: translateX(-50%); /* Centraliza perfeitamente */
+    z-index: 9999; /* Garante que fique por cima de TUDO */
+    
+    background-color: rgba(18, 18, 19, 0.95); /* Fundo escuro levemente transparente */
+    border: 1px solid #3a3a3c;
+    padding: 14px 24px;
+    border-radius: 8px;
     font-weight: bold;
-    min-height: 24px;
-    margin-bottom: 40px;
+    font-size: 1.1rem;
     text-align: center;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 9px 20px;
-    border-radius: 9px;
-    backdrop-filter: blur(4px); /* Efeito de vidro */
-    opacity: 1;
-    transition: opacity 0.3s ease, transform 0.3s ease, opacity 0.5s ease-out;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+    
+    /* Faz a mensagem ignorar o toque do dedo, pra não atrapalhar o jogo */
+    pointer-events: none; 
+    
+    /* Animação suave para aparecer/desaparecer */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out;
 }
 
-
+/* Quando a mensagem tem texto, ela aparece magicamente */
 #message:not(:empty) {
     opacity: 1;
-    transform: translateY(-5px);
-    margin-bottom: 20px;
+    visibility: visible;
 }
-
 /* ================= Tabuleiro e Quadrados ================= */
 #board {
     display: grid;
@@ -118,54 +126,65 @@ h1 {
     box-shadow: none !important;
     animation: flipIn 0.6s ease-in-out forwards;
 }
-
-/* ================= Teclado Virtual ================= */
+/* ================= TECLADO RESPONSIVO ================= */
 #keyboard {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    align-items: center;
     width: 100%;
     max-width: 500px;
+    margin: 0 auto;
+    padding: 0 5px; /* Evita colar 100% na borda da tela */
+    box-sizing: border-box;
+    gap: 8px; /* Espaçamento entre as linhas */
 }
 
 .key-row {
     display: flex;
     justify-content: center;
-    gap: 6px;
+    width: 100%;
+    gap: 5px; /* Espaçamento entre as teclas */
+    touch-action: manipulation; /* Remove delay de duplo clique no celular */
 }
 
 .key {
-    background-color: var(--gray-termo);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    text-transform: uppercase;
-    flex: 1;
+    flex: 1; /* A MÁGICA: faz as teclas dividirem o espaço igualmente e se espremerem */
     height: 58px;
+    min-width: 0; /* Essencial para o flex funcionar no celular */
+    max-width: 45px; /* Não deixa ficar gigante no PC */
+    border-radius: 5px;
+    border: none;
+    font-weight: bold;
+    font-size: 1.2rem;
+    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.2rem;
-    user-select: none;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5); /* Efeito 3D nas teclas */
+    padding: 0; /* Remove padding que pode quebrar a largura */
+    
+    /* Mantenha as suas cores de fundo e texto aqui! */
+    background-color: #818384; 
+    color: white;
 }
 
-.key:hover {
-    filter: brightness(1.2);
-    transform: translateY(-2px);
-}
-
-.key:active {
-    transform: scale(0.95) translateY(4px);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0.5); /* Tecla "afunda" */
-}
-
+/* Teclas especiais (ENTER e APAGAR) precisam ser mais larguinhas */
 .key.large {
-    flex: 1.5;
-    font-size: 1rem;
+    flex: 1.5; /* Ocupa 1.5x o tamanho de uma letra normal */
+    font-size: 0.9rem; /* Letra um pouco menor para a palavra ENTER caber */
+}
+
+/* Ajustes finos para celulares muito pequenos (iPhone SE, etc) */
+@media (max-width: 400px) {
+    .key-row {
+        gap: 3px;
+    }
+    .key {
+        height: 52px;
+        font-size: 1rem;
+    }
+    .key.large {
+        font-size: 0.75rem;
+    }
 }
 
 /* ================= Animações Especiais ================= */
