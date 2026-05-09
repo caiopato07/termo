@@ -27,6 +27,7 @@ const db = getFirestore(app);
 
 // Referências HTML (Login e Jogo)
 const authContainer = document.getElementById("auth-container");
+const seletorModos = document.getElementById("mode-selector"); // Ajuste o ID se necessário
 const usernameInput = document.getElementById("username");
 const passwordInput = document.getElementById("password");
 const btnLogin = document.getElementById("btnLogin");
@@ -61,6 +62,8 @@ onAuthStateChanged(auth, async (user) => {
         userInfo.style.setProperty('display', 'flex', 'important');
         rankingContainer.style.setProperty('display', 'block', 'important');
 
+        if(seletorModos) seletorModos.style.setProperty('display', 'flex', 'important');
+
         // 1. O GRANDE TRUQUE: Extrai o nome de usuário direto do e-mail!
         // Pega "joao@meutermo.com" e transforma em "joao"
         const nomeCorreto = user.email.split('@')[0];
@@ -73,7 +76,7 @@ onAuthStateChanged(auth, async (user) => {
         const today = new Date().toISOString().split('T')[0];
 
         if (!userSnap.exists()) {
-            // Primeiro acesso do usuário: cria os 3 contadores zerados
+            // Primeiro acesso do usuário: cria os 3 contadores zerados     
             userData = {
                 displayName: nomeCorreto,
                 aura: 0,
@@ -129,6 +132,9 @@ onAuthStateChanged(auth, async (user) => {
         boardElement.style.setProperty('display', 'none', 'important');
         keyboardDiv.style.setProperty('display', 'none', 'important');
         if (rankingContainer) rankingContainer.style.setProperty('display', 'none', 'important');
+        
+        // NOVO: Esconde os botões de modo na tela de login
+        if(seletorModos) seletorModos.style.setProperty('display', 'none', 'important'); 
 
         passwordInput.value = "";
     }
@@ -312,8 +318,6 @@ window.changeMode = function (mode) {
     atualizarTelaEstatisticas(); // Atualiza o contador de partidas na tela
     verificarEIniciarJogo();     // Verifica se esse novo modo já estourou o limite e desenha o tabuleiro
 };
-
-    resetarTabuleiro();
 
 
 // 2. CONSTRÓI OS TABULEIROS DINAMICAMENTE
@@ -720,6 +724,19 @@ function deactivateRemainingRows(boardIndex, attemptIndex) {
 
         let tiles = rows[i].querySelectorAll('.tile');
         tiles.forEach(tile => tile.classList.remove('selected'));
+    }
+
+    // O CÓDIGO ABAIXO ESTAVA SOLTO! Agora está protegido dentro da função.
+    for (let row = attemptIndex + 1; row < maxAttempts; row++) {
+        for (let col = 0; col < 5; col++) {
+            let tile = document.getElementById(`tile-${boardIndex}-${row}-${col}`);
+            if (tile) {
+                // Adiciona a classe que criamos no CSS
+                tile.classList.add('disabled-tile');
+                // Garante que o cursor 'selected' seja removido se estiver lá
+                tile.classList.remove('selected');
+            }
+        }
     }
 }
 // Começa da linha seguinte (attemptIndex + 1) até o final do tabuleiro
