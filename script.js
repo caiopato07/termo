@@ -221,96 +221,68 @@ function atualizarPosicaoNoPerfil(nomeUsuarioLogado, listaRanking) {
     }
 }
 
+window.rankAnterior = null; // Guarda a posição para comparar depois
+
 async function carregarRanking() {
     if (!rankingList) return;
 
-    // Busca TODOS os utilizadores ordenados por aura para sabermos a posição exata
     const q = query(collection(db, "users"), orderBy("aura", "desc"));
     const querySnapshot = await getDocs(q);
 
     rankingList.innerHTML = "";
     let index = 0;
-    let rankDoUsuario = -1; // Variável para guardar a posição do jogador atual
+    let rankDoUsuario = -1; 
 
     querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
         let nomeExibido = (data.displayName && data.displayName !== "null") ? data.displayName : "Anônimo";
 
-        // VERIFICA SE É O UTILIZADOR ATUAL: Se for, guarda a posição dele
         if (auth.currentUser && docSnap.id === auth.currentUser.uid) {
-            rankDoUsuario = index + 1; // +1 porque o index começa em 0
+            rankDoUsuario = index + 1; 
         }
 
-        // Só desenha a lista do Top 10 no modal de Ranking
         if (index < 10) {
             let li = document.createElement("li");
             li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
 
-            // Esconde os de 6º a 10º lugar inicialmente
             if (index >= 5) {
                 li.classList.add("rank-extra");
                 li.style.display = "none"; 
             }
-
             rankingList.appendChild(li);
         }
-        
         index++;
     });
 
     // ====================================================
-    // ATUALIZA O PERFIL COM A POSIÇÃO ENCONTRADA
+    // LÓGICA DE DETECTAR SE SUBIU OU CAIU NO RANKING
     // ====================================================
+    if (rankDoUsuario > 0) {
+        // Se já tínhamos um rank salvo e ele mudou
+        if (window.rankAnterior !== null && window.rankAnterior !== rankDoUsuario) {
+            
+            if (rankDoUsuario < window.rankAnterior) {
+                // Número menor = Posição melhor (ex: foi de 5 para 3)
+                mostrarNotificacaoRanking(`Subiste para o Top #${rankDoUsuario}!`, 'up');
+            } 
+            else if (rankDoUsuario > window.rankAnterior) {
+                // Número maior = Posição pior (ex: foi de 3 para 5)
+                mostrarNotificacaoRanking(`Caíste para a posição #${rankDoUsuario}.`, 'down');
+            }
+        }
+        
+        // Atualiza a memória com o rank atual para a próxima vez
+        window.rankAnterior = rankDoUsuario;
+    }
+
+    // Atualiza o perfil (código que já tínhamos feito)
     const rankDisplay = document.getElementById('user-rank-display');
     if (rankDisplay) {
-        if (rankDoUsuario > 0) {
-            rankDisplay.innerText = `#${rankDoUsuario}`;
-        } else {
-            rankDisplay.innerText = "S/R"; // "Sem Ranking" se houver algum erro
-        }
+        rankDisplay.innerText = rankDoUsuario > 0 ? `#${rankDoUsuario}` : "S/R";
     }
 
-    // ====================================================
-    // LÓGICA DO BOTÃO "VER TOP 10" (Mantida igual ao seu original)
-    // ====================================================
-    let btnToggle = document.getElementById("btn-toggle-ranking");
-
-    if (!btnToggle) {
-        btnToggle = document.createElement("button");
-        btnToggle.id = "btn-toggle-ranking";
-        btnToggle.style.marginTop = "15px";
-        btnToggle.style.padding = "8px 15px";
-        btnToggle.style.cursor = "pointer";
-        btnToggle.style.borderRadius = "5px";
-        btnToggle.style.border = "none";
-        btnToggle.style.backgroundColor = "#1e90ff"; 
-        btnToggle.style.color = "white";
-        btnToggle.style.fontWeight = "bold";
-        btnToggle.style.width = "100%";
-        btnToggle.style.transition = "0.2s";
-
-        rankingContainer.appendChild(btnToggle);
-    }
-
-    btnToggle.style.display = "block";
-    btnToggle.innerText = "Ver Top 10 ▼";
-
-    btnToggle.onclick = () => {
-        const extras = rankingList.querySelectorAll(".rank-extra");
-        if(extras.length === 0) return;
-
-        const isHidden = extras[0].style.display === "none";
-
-        extras.forEach(item => {
-            item.style.display = isHidden ? "" : "none";
-        });
-
-        btnToggle.innerText = isHidden ? "Ocultar ▲" : "Ver Top 10 ▼";
-        btnToggle.style.backgroundColor = isHidden ? "#3a3a3c" : "#1e90ff"; 
-
-        const top10 = document.getElementById('topranking');
-        if(top10) top10.innerText = isHidden ? " Top 10 Aura " : " Top 5 Aura ";
-    }
+    // Lógica do botão "Ver Top 10" (mantenha a que você já tem no seu arquivo)
+    // ...
 }
 // ==========================================
 // LÓGICA DOS MODOS: TERMO, DUETO E QUARTETO
@@ -816,4 +788,28 @@ window.ativarModo = function(modo, botao) {
 
     // 3. Fecha o modal
     if (window.fecharTodosModais) window.fecharTodosModais();
+};
+
+window.mostrarNotificacaoRanking = function(mensagem, tipo) {
+    let container = document.getElementById('toast-container');
+    
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    
+    const icone = tipo === 'up' ? '📈' : '📉';
+    toast.innerHTML = `<span class="toast-icon">${icone}</span> <span>${mensagem}</span>`;
+
+    container.appendChild(toast);
+
+    // Remove a notificação após 4 segundos (AGORA PUXANDO PARA CIMA)
+    setTimeout(() => {
+        toast.style.animation = 'fadeOutUpToast 0.4s forwards'; // <- MUDOU AQUI
+        setTimeout(() => toast.remove(), 400); 
+    }, 4000);
 };

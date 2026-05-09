@@ -552,3 +552,77 @@ button:active { transform: translateY(1px); }
 }
 
 #btnLogout:hover { background: linear-gradient(145deg, #f87171, #ef4444); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }
+
+/* ================= NOTIFICAÇÕES DE RANKING (CONQUISTA GAMER) ================= */
+#toast-container {
+    position: fixed;
+    top: 30px; /* Fica no topo da tela */
+    left: 50%;
+    transform: translateX(-50%); /* Centraliza perfeitamente */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 10000;
+    pointer-events: none;
+}
+
+.toast {
+    background: rgba(18, 18, 19, 0.95);
+    border: 2px solid;
+    padding: 15px 30px;
+    border-radius: 50px; /* Deixa redondinho estilo pílula */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 1.3rem; /* Texto bem maior */
+    font-weight: 900; /* Letra bem gordinha */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    backdrop-filter: blur(10px);
+    
+    /* Efeito da conquista caindo na tela */
+    animation: slideDownToast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Quando sobe de posição (Verde Neon) */
+.toast.up {
+    border-color: #4ade80;
+    color: #86efac;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(74, 222, 128, 0.4), inset 0 0 10px rgba(74, 222, 128, 0.2);
+    text-shadow: 0 0 8px rgba(134, 239, 172, 0.5);
+}
+
+/* Quando cai de posição (Vermelho/Laranja Neon) */
+.toast.down {
+    border-color: #f87171;
+    color: #fca5a5;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(248, 113, 113, 0.4), inset 0 0 10px rgba(248, 113, 113, 0.2);
+    text-shadow: 0 0 8px rgba(252, 165, 165, 0.5);
+}
+
+/* Aumenta o emoji para dar destaque */
+.toast-icon {
+    font-size: 2.2rem; 
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.4));
+}
+
+/* Animações (Entrada e Saída) */
+@keyframes slideDownToast {
+    0% { transform: translateY(-100px) scale(0.5); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes fadeOutUpToast {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-100px) scale(0.8); opacity: 0; }
+}
+
+@keyframes slideInRight {
+    to { transform: translateX(0); }
+}
+
+@keyframes fadeOutRight {
+    to { transform: translateX(150%); opacity: 0; }
+}
