@@ -70,6 +70,7 @@ h1 {
     grid-template-rows: repeat(6, 1fr);
     gap: 8px;
     margin-bottom: 30px;
+    margin-top: 20px; /* Isso também ajuda a dar espaço extra se precisar */
 }
 
 .row {
@@ -270,6 +271,7 @@ button:active { transform: translateY(1px); }
     width: 100%;
     max-width: 350px;
     margin-top: 60px;
+    margin-bottom: 30px; /* Adicione esta linha! */
 }
 
 /* ================= Painel do Usuário (Header) ================= */
