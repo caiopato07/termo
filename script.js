@@ -421,12 +421,12 @@ function verificarEIniciarJogo() {
     if (currentMode === 'quarteto') jogadasNoModoAtual = userData.quartetoPlayed || 0;
 
     // Verifica se ele já atingiu o limite de 5 neste modo específico
-    if (jogadasNoModoAtual >= 5) {
+    if (jogadasNoModoAtual >= 2) {
         boardElement.style.setProperty('display', 'none', 'important');
         keyboardDiv.style.setProperty('display', 'none', 'important');
 
         // Mensagem dinâmica avisando o modo que bloqueou
-        msgEl.innerText = `Você já jogou suas 5 partidas de ${currentMode.toUpperCase()} hoje! Volte amanhã ou jogue os outros modos.`;
+        msgEl.innerText = `Você já jogou suas 2 partidas de ${currentMode.toUpperCase()} hoje! Volte amanhã ou jogue os outros modos.`;
         msgEl.style.color = "#da385b";
         msgEl.style.display = "block";
         msgEl.style.marginTop = "40px";
@@ -632,17 +632,44 @@ function checkAttempt() {
         }
     }
 
-    // Verifica estado GLOBAL do jogo (se ganhou todos ou perdeu)
-    if (boardsCompleted.every(val => val === true)) {
+// Verifica estado GLOBAL do jogo (se ganhou todos ou perdeu)
+    let acertos = boardsCompleted.filter(acertou => acertou === true).length;
+
+    if (acertos === numBoards) {
         gameOver = true;
-        // Aura extra pela dificuldade: Termo +10, Dueto +15, Quarteto +20
-        let auraGanha = numBoards === 1 ? 10 : (numBoards === 2 ? 15 : 20);
+        let auraGanha = 0;
+        
+        // Pontuação de Vitória Perfeita
+        if (currentMode === 'termo') auraGanha = 10;
+        else if (currentMode === 'dueto') auraGanha = 20;
+        else if (currentMode === 'quarteto') auraGanha = 40;
+
         showMessage(`Incrível! Você venceu! +${auraGanha} Aura`, "#1e90ff");
         finalizarPartida(true, auraGanha);
+        
     } else {
         currentAttempt++;
+        
         if (currentAttempt >= maxAttempts) {
             gameOver = true;
+            let auraGanha = 0;
+
+            // Calcula a pontuação baseada em quantos tabuleiros acertou antes das chances acabarem
+            if (currentMode === 'termo') {
+                auraGanha = -7; // Acertou 0
+            } 
+            else if (currentMode === 'dueto') {
+                if (acertos === 1) auraGanha = 3;
+                else auraGanha = -14; // Acertou 0
+            } 
+            else if (currentMode === 'quarteto') {
+                if (acertos === 3) auraGanha = 23;
+                else if (acertos === 2) auraGanha = 6;
+                else if (acertos === 1) auraGanha = -11;
+                else auraGanha = -28; // Acertou 0
+            }
+
+            // Descobre quais palavras faltaram para mostrar ao jogador
             let faltaram = [];
             for (let b = 0; b < numBoards; b++) {
                 if (!boardsCompleted[b]) {
@@ -650,15 +677,21 @@ function checkAttempt() {
                     document.getElementById(`board-${b}`).classList.add("lose-anim");
                 }
             }
-            showMessage(`Fim! Faltou: ${faltaram.join(", ")}. -7 Aura`, "red");
-            finalizarPartida(false, -7);
+
+            // Deixa a mensagem de final de jogo com a cor certa (azul se pontuou positivo, vermelho se ficou negativo)
+            let msgCor = auraGanha > 0 ? "#1e90ff" : "red";
+            let sinal = auraGanha > 0 ? "+" : ""; // Adiciona o "+" visualmente se for positivo
+            
+            showMessage(`Fim! Faltou: ${faltaram.join(", ")}. ${sinal}${auraGanha} Aura`, msgCor);
+            finalizarPartida(false, auraGanha);
+            
         } else {
             // Prepara a próxima linha e reseta as letras digitadas
             currentGuess = ["", "", "", "", ""];
             setActiveColumn(0);
         }
     }
-}
+} // Fim da função checkAttempt
 
 document.addEventListener("keydown", (e) => {
     if (!isUserLoggedIn) return;
