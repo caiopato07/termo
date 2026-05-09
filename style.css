@@ -1,27 +1,28 @@
-/* ================= Variáveis Globais (Facilita muito a vida!) ================= */
+/* ================= VARIÁVEIS GLOBAIS ================= */
 :root {
     --bg-main: #121213;
     --bg-panel: rgba(26, 26, 27, 0.8);
     --text-main: #ffffff;
     --border-color: #3a3a3c;
-    --green-termo: #538d4e;
-    --yellow-termo: #b59f3b;
+    /* Cores mais claras e brilhantes */
+    --green-termo: #43b5a0; 
+    --yellow-termo: #d1b842; 
     --gray-termo: #818384;
 }
 
-/* ================= Corpo e Tipografia ================= */
+/* ================= CORPO E TIPOGRAFIA ================= */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-main);
-    /* Novo fundo com um leve brilho no centro topo */
     background-image: radial-gradient(circle at 50% -20%, #2a2a2c 0%, var(--bg-main) 70%);
     color: var(--text-main);
     display: flex;
     flex-direction: column;
     align-items: center;
     margin: 0;
-    padding: 20px;
+    padding: 20px 10px;
     min-height: 100vh;
+    box-sizing: border-box;
     overflow-x: hidden;
 }
 
@@ -30,18 +31,20 @@ h1 {
     padding-bottom: 10px;
     letter-spacing: 6px;
     margin-bottom: 25px;
-    font-size: 2.8rem;
+    font-size: clamp(2rem, 5vw, 2.8rem);
     font-weight: 800;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+    text-align: center;
 }
+
+/* ================= MENSAGEM FLUTUANTE ================= */
 #message {
     position: fixed;
-    top: 15%; /* Fica na parte de cima da tela, longe do teclado */
+    top: 15%;
     left: 50%;
-    transform: translateX(-50%); /* Centraliza perfeitamente */
-    z-index: 9999; /* Garante que fique por cima de TUDO */
-    
-    background-color: rgba(18, 18, 19, 0.95); /* Fundo escuro levemente transparente */
+    transform: translateX(-50%);
+    z-index: 9999;
+    background-color: rgba(18, 18, 19, 0.95);
     border: 1px solid #3a3a3c;
     padding: 14px 24px;
     border-radius: 8px;
@@ -49,66 +52,209 @@ h1 {
     font-size: 1.1rem;
     text-align: center;
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-    
-    /* Faz a mensagem ignorar o toque do dedo, pra não atrapalhar o jogo */
-    pointer-events: none; 
-    
-    /* Animação suave para aparecer/desaparecer */
+    pointer-events: none;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease-in-out;
 }
 
-/* Quando a mensagem tem texto, ela aparece magicamente */
 #message:not(:empty) {
     opacity: 1;
     visibility: visible;
 }
-/* ================= Tabuleiro e Quadrados ================= */
-#board {
-    display: grid;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 8px;
-    margin-bottom: 30px;
-    margin-top: 20px; /* Isso também ajuda a dar espaço extra se precisar */
+
+/* ================= MODOS DE JOGO ================= */
+#mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.mode-btn {
+    background-color: var(--bg-panel);
+    color: white;
+    border: 1px solid var(--border-color);
+    padding: 8px 15px;
+    border-radius: 8px; /* Mais arredondado */
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.mode-btn.active {
+    background-color: var(--green-termo);
+    border-color: var(--green-termo);
+    box-shadow: 0 0 10px rgba(67, 181, 160, 0.4); /* Brilho no botão ativo */
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ================= TABULEIROS RESPONSIVOS ================= */
+#boards-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    margin: 0 auto 20px auto;
+    padding: 0;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.board {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    max-width: min(500px, 60vh);
+    min-width: 150px;
 }
 
 .row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+    container-type: inline-size;
 }
 
 .tile {
-    width: 62px;
-    height: 62px;
-    border: 2px solid var(--border-color);
-    background-color: rgba(255, 255, 255, 0.02);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    min-width: 0; 
+    min-height: 0;
+    overflow: hidden; 
+    
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2.2rem;
-    font-weight: bold;
+    
+    /* LETRAS GIGANTES: Aumentado para 18cqw e max de 3.2rem */
+    font-size: min(18cqw, 3.2rem); 
+    line-height: 1;
+    font-weight: 900; /* Letra mais gordinha/forte */
     text-transform: uppercase;
-    border-radius: 10px; /* Mais arredondado */
-    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.4);
+    
+    /* BORDAS ARREDONDADAS */
+    border-radius: 15px; 
+    background-color: transparent;
+    border: 2px solid var(--border-color);
     transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-sizing: border-box;
 }
 
-/* Efeito quando o jogador seleciona a letra (Cursor) */
+/* Fallback de segurança para navegadores antigos */
+@supports not (container-type: inline-size) {
+    .tile { font-size: clamp(1.5rem, 6vw, 3.2rem); }
+    #boards-container.mode-quarteto .tile { font-size: clamp(1rem, 3vw, 2rem); 
+    padding-bottom: 30px; /* Espaço para desgrudar do teclado */}
+}
+
+/* Interações do Quadrado */
+.tile[data-state="tbd"], .tile.filled { 
+    border-color: #787c7e; 
+}
+
 .tile.selected {
     border-color: #ffffff;
     transform: scale(1.08);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
     z-index: 10;
 }
 
-/* Cores do Jogo com Animação de "Virada" 3D e Brilho */
+.disabled-row { opacity: 0.2 !important; pointer-events: none; }
+
+/* ================= AJUSTES DUETO ================= */
+#boards-container.mode-dueto {
+    flex-wrap: nowrap;
+    gap: 30px;
+}
+
+#boards-container.mode-dueto .board {
+    max-width: min(400px, 50vh); 
+    min-width: 130px;
+}
+/* ================= AJUSTES QUARTETO ================= */
+/* Layout para Desktop (4 tabuleiros lado a lado igual ao original) */
+#boards-container.mode-quarteto {
+    padding-bottom: 30px; /* Espaço para desgrudar do teclado */
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px; /* Espaço generoso entre os 4 tabuleiros */
+    width: 100%;
+    max-width: 1100px; /* Espaço amplo para caber os 4 confortavelmente */
+    margin: 0 auto;
+}
+
+#boards-container.mode-quarteto .board {
+    flex: 1; /* Faz os tabuleiros dividirem o espaço igualmente */
+    max-width: 250px; 
+    min-width: 120px;
+    gap: 5px; /* Reduz o espaço entre as linhas para manter a proporção */
+}
+
+#boards-container.mode-quarteto .row {
+    gap: 5px; /* Reduz o espaço entre as letras */
+}
+
+#boards-container.mode-quarteto .tile {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    
+    /* CORREÇÃO DO DESIGN: Menos arredondado para não virar um círculo no tamanho menor */
+    border-radius: 4px; 
+    border-width: 2px;
+    
+    /* Fonte escalável adaptada para não vazar do quadrado pequeno */
+    font-size: clamp(1rem, 2.5vw, 1.8rem);
+    font-weight: 800;
+}
+
+/* Responsividade: Celulares e Tablets (Muda para 2x2 para não esmagar) */
+@media (max-width: 850px) {
+    #boards-container.mode-quarteto {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px 10px;
+        max-width: 500px; /* Centraliza o bloco 2x2 */
+    }
+    
+    #boards-container.mode-quarteto .board {
+        max-width: 100%; 
+    }
+    
+    #boards-container.mode-quarteto .tile {
+        font-size: clamp(1rem, 5vw, 1.6rem);
+        border-radius: 4px;
+    }
+}
+
+/* ================= TELAS PEQUENAS (Mobile Setup) ================= */
+@media (max-width: 600px) {
+    .board, .row { gap: 5px; }
+    /* Ajusta arredondamento para mobile para não virar bolinha */
+    .tile { border-radius: 8px; border-width: 2px; } 
+    #boards-container.mode-quarteto { gap: 10px 6px; }
+}
+
+/* ================= CORES DO JOGO E ANIMAÇÕES (Mais brilhantes) ================= */
 .correct {
     background-color: var(--green-termo) !important;
     border-color: var(--green-termo) !important;
     color: white;
-    box-shadow: 0 0 15px rgba(83, 141, 78, 0.4) !important;
+    /* Glow externo e leve volume interno */
+    box-shadow: 0 0 16px rgba(67, 181, 160, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     animation: flipIn 0.6s ease-in-out forwards;
 }
 
@@ -116,7 +262,9 @@ h1 {
     background-color: var(--yellow-termo) !important;
     border-color: var(--yellow-termo) !important;
     color: white;
-    box-shadow: 0 0 15px rgba(181, 159, 59, 0.4) !important;
+    /* Glow externo e leve volume interno */
+    box-shadow: 0 0 16px rgba(209, 184, 66, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
     animation: flipIn 0.6s ease-in-out forwards;
 }
 
@@ -124,74 +272,14 @@ h1 {
     background-color: var(--border-color) !important;
     border-color: var(--border-color) !important;
     color: white;
-    box-shadow: none !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     animation: flipIn 0.6s ease-in-out forwards;
 }
-/* ================= TECLADO RESPONSIVO ================= */
-#keyboard {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
-    padding: 0 5px; /* Evita colar 100% na borda da tela */
-    box-sizing: border-box;
-    gap: 8px; /* Espaçamento entre as linhas */
-}
 
-.key-row {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    gap: 5px; /* Espaçamento entre as teclas */
-    touch-action: manipulation; /* Remove delay de duplo clique no celular */
-}
-
-.key {
-    flex: 1; /* A MÁGICA: faz as teclas dividirem o espaço igualmente e se espremerem */
-    height: 58px;
-    min-width: 0; /* Essencial para o flex funcionar no celular */
-    max-width: 45px; /* Não deixa ficar gigante no PC */
-    border-radius: 5px;
-    border: none;
-    font-weight: bold;
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0; /* Remove padding que pode quebrar a largura */
-    
-    /* Mantenha as suas cores de fundo e texto aqui! */
-    background-color: #818384; 
-    color: white;
-}
-
-/* Teclas especiais (ENTER e APAGAR) precisam ser mais larguinhas */
-.key.large {
-    flex: 1.5; /* Ocupa 1.5x o tamanho de uma letra normal */
-    font-size: 0.9rem; /* Letra um pouco menor para a palavra ENTER caber */
-}
-
-/* Ajustes finos para celulares muito pequenos (iPhone SE, etc) */
-@media (max-width: 400px) {
-    .key-row {
-        gap: 3px;
-    }
-    .key {
-        height: 52px;
-        font-size: 1rem;
-    }
-    .key.large {
-        font-size: 0.75rem;
-    }
-}
-
-/* ================= Animações Especiais ================= */
 @keyframes flipIn {
-    0% { transform: rotateX(-90deg); opacity: 0.5; }
-    100% { transform: rotateX(0deg); opacity: 1; }
+    0% { transform: rotateX(-90deg) scale(0.9); opacity: 0.5; }
+    100% { transform: rotateX(0deg) scale(1); opacity: 1; }
 }
 
 @keyframes bounce {
@@ -199,6 +287,7 @@ h1 {
     40% { transform: translateY(-30px); }
     60% { transform: translateY(-15px); }
 }
+
 .win-anim { animation: bounce 1s ease; }
 
 @keyframes shake {
@@ -206,9 +295,61 @@ h1 {
     10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
     20%, 40%, 60%, 80% { transform: translateX(8px); }
 }
+
 .lose-anim { animation: shake 0.5s ease; }
 
-/* ================= Interface de Login e Botões ================= */
+#keyboard {
+    width: 95%; /* Ocupa quase a tela toda, mas garante um respiro nas bordas */
+    max-width: 1200px; /* Trava o crescimento num tamanho bom para não sumir da visão no PC */
+    margin: 0 auto; /* Mantém o teclado centralizado na tela */
+    
+    /* Mantenha o resto do seu código abaixo... */
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+    /* ... */
+}
+
+/* Garanta que as linhas do teclado também tenham 100% */
+.key-row {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    gap: 6px; 
+}
+
+.key {
+    flex: 1; /* A MÁGICA: faz as teclas esticarem para preencher os 100% da tela */
+    height: 52px; /* Altura confortável para o dedo no celular */
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #818384;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    text-transform: uppercase;
+    touch-action: manipulation; /* Evita o zoom acidental ao digitar rápido no celular */
+}
+
+/* O botão de ENTER e BACKSPACE geralmente são um pouco maiores */
+.key.large {
+    flex: 1.5; /* Fica 50% mais largo que as teclas de letras normais */
+    font-size: 0.9rem;
+}   
+
+@media (max-width: 400px) {
+    .key-row { gap: 4px; }
+    .key { height: 52px; font-size: 1.1rem; border-radius: 6px; }
+    .key.large { font-size: 0.8rem; }
+}
+
+/* ================= INTERFACE DE LOGIN ================= */
 #auth-container {
     display: flex;
     flex-direction: column;
@@ -235,7 +376,7 @@ input {
 
 input:focus {
     border-color: var(--green-termo);
-    box-shadow: 0 0 10px rgba(83, 141, 78, 0.3);
+    box-shadow: 0 0 10px rgba(67, 181, 160, 0.3);
 }
 
 button {
@@ -251,16 +392,12 @@ button {
 
 #btnLogin { background-color: var(--border-color); color: white; }
 #btnCadastro { background-color: #145ecc; color: white; }
-#btnLogout { background-color: #ef4444; color: white; margin-top: 10px; }
 #btn-toggle-ranking { background-color: var(--green-termo); color: white; width: 100%; margin-top: 15px; }
-
 button:hover { filter: brightness(1.15); transform: translateY(-2px); }
 button:active { transform: translateY(1px); }
 
-/* ================= Ranking ================= */
-#board, #keyboard, #user-info {
-    display: none !important;
-}
+/* ================= RANKING E CABEÇALHO DO USUÁRIO ================= */
+#board, #user-info { display: none !important; }
 
 #ranking-container {
     background: linear-gradient(145deg, #1e1e1e, #121213);
@@ -270,11 +407,33 @@ button:active { transform: translateY(1px); }
     border: 1px solid #333;
     width: 100%;
     max-width: 350px;
-    margin-top: 60px;
-    margin-bottom: 30px; /* Adicione esta linha! */
+    margin-top: 20px;
+    margin-bottom: 30px;
 }
 
-/* ================= Painel do Usuário (Header) ================= */
+#ranking-list { list-style: none; padding: 0; margin: 0; }
+#ranking-list li {
+    background: #2a2a2c;
+    margin-bottom: 12px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-left: 5px solid var(--gray-termo);
+    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+#ranking-list li:hover { transform: translateX(5px); box-shadow: 0 6px 15px rgba(67, 181, 160, 0.3); background: #3a3a3c; }
+#ranking-list li:nth-child(1) { border-left-color: #FFD700; font-weight: bold; background: linear-gradient(90deg, rgba(255, 215, 0, 0.1) 0%, #2a2a2c 100%); }
+#ranking-list li:nth-child(2) { border-left-color: var(--green-termo); background: linear-gradient(90deg, rgba(192, 192, 192, 0.1) 0%, #2a2a2c 100%); }
+#ranking-list li:nth-child(3) { border-left-color: #CD7F32; background: linear-gradient(90deg, rgba(205, 127, 50, 0.1) 0%, #2a2a2c 100%); }
+#ranking-list li:nth-child(1)::after { content: " 🥇"; font-size: 1.5rem; filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5)); }
+#ranking-list li:nth-child(2)::after { content: " 🥈"; font-size: 1.5rem; }
+#ranking-list li:nth-child(3)::after { content: " 🥉"; font-size: 1.5rem; }
+
 #user-info {
     display: flex;
     flex-direction: column;
@@ -287,61 +446,40 @@ button:active { transform: translateY(1px); }
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
     margin-bottom: 25px;
-    width: 90%; /* Deixa ele flexível em telas pequenas */
+    width: 100%;
     max-width: 350px;
-    box-sizing: border-box; /* Impede que o espaçamento interno (padding) quebre a largura */
+    box-sizing: border-box;
 }
 
-/* Nome do Jogador com Efeito Gradiente Premium */
-/* Nome do Jogador com Efeito Gradiente Premium */
 #welcome-msg {
     font-size: 1.8rem;
     font-weight: 800;
     margin: 0;
     background: linear-gradient(90deg, #4ade80, #3b82f6);
     -webkit-background-clip: text;
-    background-clip: text; /* <--- Adicionamos o padrão aqui! */
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     text-shadow: 0 2px 10px rgba(74, 222, 128, 0.2);
     letter-spacing: 1px;
+    text-align: center;
 }
 
-/* Contêiner das pílulas de status */
-.user-stats {
-    display: flex;
-    gap: 15px;
-    font-size: 0.95rem;
-    font-weight: bold;
-}
-
-/* Estilo das pílulas (badges) */
+.user-stats { display: flex; gap: 10px; font-size: 0.95rem; font-weight: bold; flex-wrap: wrap; justify-content: center; }
 .stat-badge {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border-radius: 20px; /* Bordas bem redondas */
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 20px;
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid var(--border-color);
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
-    letter-spacing: 0.5px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-/* Aura ganha um tom dourado/brilhante */
-.stat-badge.aura {
-    border-color: var(--yellow-termo);
-    color: #fde047;
-    box-shadow: inset 0 0 10px rgba(181, 159, 59, 0.2);
-}
+.stat-badge.aura { border-color: var(--yellow-termo); color: #fde047; box-shadow: inset 0 0 10px rgba(209, 184, 66, 0.2); }
+.stat-badge.daily { border-color: var(--green-termo); color: #86efac; box-shadow: inset 0 0 10px rgba(67, 181, 160, 0.2); }
+.daily-count { text-decoration-color: #fde047; }
 
-/* Diárias ganham o verde clássico */
-.stat-badge.daily {
-    border-color: var(--green-termo);
-    color: #86efac;
-    box-shadow: inset 0 0 10px rgba(83, 141, 78, 0.2);
-}
-
-/* Botão de sair repaginado */
 #btnLogout {
     margin-top: 5px;
     background: linear-gradient(145deg, #ef4444, #dc2626);
@@ -349,57 +487,7 @@ button:active { transform: translateY(1px); }
     padding: 8px 30px;
     font-size: 0.9rem;
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+    color: white;
 }
 
-#btnLogout:hover {
-    background: linear-gradient(145deg, #f87171, #ef4444);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
-}
-
-#ranking-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-#ranking-list li {
-    background: #2a2a2c;
-    margin-bottom: 12px;
-    padding: 14px 20px;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    border-left: 5px solid var(--green-termo);
-    transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-}
-
-#ranking-list li:hover {
-    transform: translateX(5px);
-    box-shadow: 0 6px 15px rgba(83, 141, 78, 0.3);
-    background: #3a3a3c;
-}
-
-/* Efeito especial para o Top 1, Top 2 e Top 3 com Gradientes */
-#ranking-list li:nth-child(1) {
-    border-left-color: #FFD700;
-    font-weight: bold;
-    background: linear-gradient(90deg, rgba(255,215,0,0.1) 0%, #2a2a2c 100%);
-}
-
-#ranking-list li:nth-child(2) {
-    border-left-color: #C0C0C0;
-    background: linear-gradient(90deg, rgba(192,192,192,0.1) 0%, #2a2a2c 100%);
-}
-
-#ranking-list li:nth-child(3) {
-    border-left-color: #CD7F32;
-    background: linear-gradient(90deg, rgba(205,127,50,0.1) 0%, #2a2a2c 100%);
-}
-
-/* Adicionando medalhas usando pseudo-elementos via CSS! */
-#ranking-list li:nth-child(1)::after { content: " 🥇"; font-size: 1.5rem; filter: drop-shadow(0 0 5px rgba(255,215,0,0.5)); }
-#ranking-list li:nth-child(2)::after { content: " 🥈"; font-size: 1.5rem; }
-#ranking-list li:nth-child(3)::after { content: " 🥉"; font-size: 1.5rem; }
+#btnLogout:hover { background: linear-gradient(145deg, #f87171, #ef4444); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }

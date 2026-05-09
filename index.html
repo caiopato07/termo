@@ -10,6 +10,7 @@
 
 <body>
   <h1>TERMO</h1>
+
   <div id="auth-container" style="
         display: flex;
         flex-direction: column;
@@ -68,18 +69,18 @@
 
   <div id="user-info">
     <h2 id="welcome-msg">Olá!</h2>
-    
+
     <div class="user-stats">
-        <div class="stat-badge aura">
-            <span id="user-aura">0</span> Aura
-        </div>
-        <div class="stat-badge daily">
-            <span id="daily-count">0</span>/5 Hoje
-        </div>
+      <div class="stat-badge aura">
+        <span id="user-aura">0</span> Aura
+      </div>
+      <div class="stat-badge daily">
+        <span id="daily-count">0</span>/5 Hoje
+      </div>
     </div>
 
     <button id="btnLogout">SAIR</button>
-</div>
+  </div>
 
   <div id="ranking-container"
     style="display: none; margin-top: 40px; border-top: 1px solid #3a3a3c; padding-top: 20px; width: 100%; max-width: 350px;">
@@ -95,10 +96,21 @@
       ">
     Sair
   </button>
-  <div id="board"></div>
+  <div id="mode-selector">
+    <button class="mode-btn active" onclick="changeMode('termo')">Termo</button>
+    <button class="mode-btn" onclick="changeMode('dueto')">Dueto</button>
+    <button class="mode-btn" onclick="changeMode('quarteto')">Quarteto</button>
+  </div>
+
+  <div id="boards-container" class="mode-termo">
+    <div id="board-0" class="board"></div>
+    <div id="board-1" class="board hidden"></div>
+    <div id="board-2" class="board hidden"></div>
+    <div id="board-3" class="board hidden"></div>
+  </div>
   <div id="keyboard"></div>
   <div id="message"></div>
-  
+
 
   <script src="PALAVRAS_TERMO.js"></script>
   <script src="PALAVRAS_ACEITAS.js"></script>
