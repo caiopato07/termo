@@ -266,8 +266,9 @@ button:active { transform: translateY(1px); }
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(10px);
     margin-bottom: 25px;
-    width: 100%;
-    max-width: 350px; /* Fica alinhado com o tamanho do Ranking */
+    width: 90%; /* Deixa ele flexível em telas pequenas */
+    max-width: 350px;
+    box-sizing: border-box; /* Impede que o espaçamento interno (padding) quebre a largura */
 }
 
 /* Nome do Jogador com Efeito Gradiente Premium */
