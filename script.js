@@ -304,6 +304,38 @@ let gameOver = false;
 
 const removeAcentos = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
+
+// Dicionário para traduzir o status do seu jogo para as cores do CSS
+const coresTeclado = {
+    'certa': 'var(--cor-certa)',        // Verde
+    'lugar-errado': 'var(--cor-lugar-errado)', // Amarelo
+    'errada': 'var(--cor-errada)',      // Cinza escuro
+    'padrao': 'var(--cor-padrao)'       // Cinza normal
+};
+
+// Função para pintar a tecla dividida no modo DUETO
+window.pintarTeclaDueto = function(letra, statusEsquerda, statusDireita) {
+    // Procura o botão no seu teclado que tenha a letra específica
+    // (Ajuste o seletor abaixo caso as suas teclas tenham classes/IDs diferentes)
+    const teclas = document.querySelectorAll('.keyboard-button'); 
+    let teclaAlvo = null;
+
+    teclas.forEach(btn => {
+        if (btn.innerText.trim().toUpperCase() === letra.toUpperCase()) {
+            teclaAlvo = btn;
+        }
+    });
+
+    if (teclaAlvo) {
+        // Adiciona a classe que ativa o gradiente
+        teclaAlvo.classList.add('tecla-dueto');
+        
+        // Injeta as cores da esquerda e da direita usando variáveis do CSS
+        teclaAlvo.style.setProperty('--cor-esq', coresTeclado[statusEsquerda] || coresTeclado['padrao']);
+        teclaAlvo.style.setProperty('--cor-dir', coresTeclado[statusDireita] || coresTeclado['padrao']);
+    }
+};
+
 // 1. FUNÇÃO DE TROCAR DE MODO
 // Função para pintar o botão selecionado
 // Função para pintar o botão selecionado
@@ -441,8 +473,15 @@ function resetarTabuleiro() {
     document.getElementById("message").innerText = "";
 
     // Limpa teclado e animações
+    // Limpa teclado e animações
     document.querySelectorAll('.key').forEach(key => {
-        key.classList.remove("correct", "present", "absent");
+        key.classList.remove("correct", "present", "absent", "tecla-dueto"); // Adicionado "tecla-dueto"
+        
+        // Remove a memória de cores dos lados esquerdo e direito
+        key.removeAttribute("data-b0");
+        key.removeAttribute("data-b1");
+        key.style.removeProperty('--cor-esq');
+        key.style.removeProperty('--cor-dir');
     });
     for (let b = 0; b < 4; b++) {
         let boardDiv = document.getElementById(`board-${b}`);
@@ -651,19 +690,48 @@ function checkAttempt() {
             }
 
             // Atualiza o Teclado
+            // Atualiza o Teclado
             const keyBtn = document.getElementById(`key-${letter}`);
             if (keyBtn) {
-                if (colorClass === "correct") {
-                    keyBtn.classList.remove("present", "absent");
-                    keyBtn.classList.add("correct");
-                } else if (colorClass === "present" && !keyBtn.classList.contains("correct")) {
-                    keyBtn.classList.remove("absent");
-                    keyBtn.classList.add("present");
-                } else if (colorClass === "absent" && !keyBtn.classList.contains("correct") && !keyBtn.classList.contains("present")) {
-                    keyBtn.classList.add("absent");
+                // Se for Termo ou Quarteto, usa a lógica original por enquanto
+                if (currentMode === 'termo' || currentMode === 'quarteto') {
+                    if (colorClass === "correct") {
+                        keyBtn.classList.remove("present", "absent");
+                        keyBtn.classList.add("correct");
+                    } else if (colorClass === "present" && !keyBtn.classList.contains("correct")) {
+                        keyBtn.classList.remove("absent");
+                        keyBtn.classList.add("present");
+                    } else if (colorClass === "absent" && !keyBtn.classList.contains("correct") && !keyBtn.classList.contains("present")) {
+                        keyBtn.classList.add("absent");
+                    }
+                } 
+                // Se for DUETO, aplica a mágica das cores divididas
+                else if (currentMode === 'dueto') {
+                    // Traduz o nome da classe em inglês para o nosso dicionário
+                    let statusNome = 'padrao';
+                    if (colorClass === 'correct') statusNome = 'certa';
+                    else if (colorClass === 'present') statusNome = 'lugar-errado';
+                    else if (colorClass === 'absent') statusNome = 'errada';
+
+                    // Puxa a cor que já estava guardada para esse tabuleiro na tecla
+                    let statusSalvo = keyBtn.getAttribute(`data-b${b}`) || 'padrao';
+                    
+                    // Só atualiza a memória se a nova cor for "melhor" que a antiga (Verde > Amarelo > Cinza)
+                    if (statusNome === 'certa' || 
+                       (statusNome === 'lugar-errado' && statusSalvo !== 'certa') || 
+                       (statusNome === 'errada' && statusSalvo === 'padrao')) {
+                        
+                        keyBtn.setAttribute(`data-b${b}`, statusNome);
+                    }
+
+                    // Pega a melhor cor de cada lado (0 = Esquerda, 1 = Direita)
+                    let statusEsq = keyBtn.getAttribute('data-b0') || 'padrao';
+                    let statusDir = keyBtn.getAttribute('data-b1') || 'padrao';
+
+                    // Chama a função que pinta a divisão!
+                    window.pintarTeclaDueto(letter, statusEsq, statusDir);
                 }
-            }
-        }
+            }}
 
         // Verifica se ganhou ESTE tabuleiro
         if (guessStr === targetWordClean) {
@@ -750,33 +818,45 @@ document.addEventListener("keydown", (e) => {
 });
 
 // Função para apagar as linhas restantes de um tabuleiro concluído
+// --- FINAL DO ARQUIVO CORRIGIDO ---
+
+// Função para apagar as linhas restantes de um tabuleiro concluído
 function deactivateRemainingRows(boardIndex, attemptIndex) {
     let board = document.getElementById(`board-${boardIndex}`);
     if (!board) return;
 
-    // Pega todas as linhas e desativa as que estão abaixo do acerto
     let rows = board.querySelectorAll('.row');
     for (let i = attemptIndex + 1; i < rows.length; i++) {
         rows[i].classList.add('disabled-row');
-
         let tiles = rows[i].querySelectorAll('.tile');
         tiles.forEach(tile => tile.classList.remove('selected'));
     }
 
-    // O CÓDIGO ABAIXO ESTAVA SOLTO! Agora está protegido dentro da função.
     for (let row = attemptIndex + 1; row < maxAttempts; row++) {
         for (let col = 0; col < 5; col++) {
             let tile = document.getElementById(`tile-${boardIndex}-${row}-${col}`);
             if (tile) {
-                // Adiciona a classe que criamos no CSS
                 tile.classList.add('disabled-tile');
-                // Garante que o cursor 'selected' seja removido se estiver lá
                 tile.classList.remove('selected');
             }
         }
     }
 }
-// SEU ARQUIVO DEVE TERMINAR AQUI! SEM NADA DEPOIS DESSA CHAVE.
+
+// Esta é a função que estava cortada no seu código
+window.ativarModo = function(modo, botao) {
+    // 1. Muda a cor do botão clicado (UI)
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    if (botao) {
+        botao.classList.add('active');
+    }
+
+    // 2. Chama a lógica de trocar o modo de jogo
+    window.changeMode(modo);
+};
+
+// Garante que o jogo comece limpo se o script recarregar
+console.log("Script carregado com sucesso!");
 
 window.ativarModo = function(modo, botao) {
     // 1. Muda a cor do botão clicado
