@@ -26,6 +26,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Referências HTML (Login e Jogo)
+const menuNavegacao = document.getElementById("menu-navegacao");
 const authContainer = document.getElementById("auth-container");
 const seletorModos = document.getElementById("mode-selector"); // Ajuste o ID se necessário
 const usernameInput = document.getElementById("username");
@@ -58,7 +59,19 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         isUserLoggedIn = true;
 
-        authContainer.style.setProperty('display', 'none', 'important');
+        // Esconde o login
+        if (authContainer) authContainer.style.setProperty('display', 'none', 'important');
+        
+        // Mostra o menu superior
+        if (menuNavegacao) menuNavegacao.style.setProperty('display', 'flex', 'important');
+        
+        // MOSTRA O JOGO EM SEGUNDO PLANO (Sempre ativo)
+        const abaJogo = document.getElementById('aba-jogo');
+        if (abaJogo) abaJogo.style.setProperty('display', 'flex', 'important');
+
+        // Garante que nenhum pop-up inicie aberto
+        fecharTodosModais();
+
         userInfo.style.setProperty('display', 'flex', 'important');
         rankingContainer.style.setProperty('display', 'block', 'important');
 
@@ -127,14 +140,13 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         isUserLoggedIn = false;
 
-        authContainer.style.setProperty('display', 'flex', 'important');
-        userInfo.style.setProperty('display', 'none', 'important');
-        boardElement.style.setProperty('display', 'none', 'important');
-        keyboardDiv.style.setProperty('display', 'none', 'important');
-        if (rankingContainer) rankingContainer.style.setProperty('display', 'none', 'important');
+        if (authContainer) authContainer.style.setProperty('display', 'flex', 'important');
         
-        // NOVO: Esconde os botões de modo na tela de login
-        if(seletorModos) seletorModos.style.setProperty('display', 'none', 'important'); 
+        // Esconde o menu, o jogo e qualquer pop-up
+        if (menuNavegacao) menuNavegacao.style.setProperty('display', 'none', 'important');
+        const abaJogo = document.getElementById('aba-jogo');
+        if (abaJogo) abaJogo.style.setProperty('display', 'none', 'important');
+        fecharTodosModais();
 
         passwordInput.value = "";
     }
@@ -195,86 +207,109 @@ function atualizarTelaEstatisticas() {
     }
 }
 
+function atualizarPosicaoNoPerfil(nomeUsuarioLogado, listaRanking) {
+    // 1. Encontra o índice do usuário na lista (ordenada por aura)
+    // Somamos +1 porque o array começa no 0, mas o ranking no 1º
+    const posicao = listaRanking.findIndex(u => u.nome === nomeUsuarioLogado) + 1;
+    
+    const rankDisplay = document.getElementById('user-rank-display');
+    
+    if (posicao > 0) {
+        rankDisplay.innerText = `#${posicao}`;
+    } else {
+        rankDisplay.innerText = "S/R"; // "Sem Ranking" se não estiver no top
+    }
+}
+
 async function carregarRanking() {
     if (!rankingList) return;
 
-    // Continua buscando os 10 melhores
-    const q = query(collection(db, "users"), orderBy("aura", "desc"), limit(10));
+    // Busca TODOS os utilizadores ordenados por aura para sabermos a posição exata
+    const q = query(collection(db, "users"), orderBy("aura", "desc"));
     const querySnapshot = await getDocs(q);
 
     rankingList.innerHTML = "";
     let index = 0;
+    let rankDoUsuario = -1; // Variável para guardar a posição do jogador atual
 
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        let li = document.createElement("li");
-
+    querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         let nomeExibido = (data.displayName && data.displayName !== "null") ? data.displayName : "Anônimo";
 
-        // Cuidado: aqui você deve manter a estrutura HTML que já está usando para ficar bonito com o seu CSS.
-        // Se você mudou algo no HTML do "li" para pôr as medalhas, mantenha a sua versão!
-        li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
-
-        // NOVO: Se for o 6º lugar ou abaixo, esconde e adiciona a classe "rank-extra"
-        if (index >= 5) {
-            li.classList.add("rank-extra");
-            li.style.display = "none"; // Esconde por padrão
+        // VERIFICA SE É O UTILIZADOR ATUAL: Se for, guarda a posição dele
+        if (auth.currentUser && docSnap.id === auth.currentUser.uid) {
+            rankDoUsuario = index + 1; // +1 porque o index começa em 0
         }
 
-        rankingList.appendChild(li);
+        // Só desenha a lista do Top 10 no modal de Ranking
+        if (index < 10) {
+            let li = document.createElement("li");
+            li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
+
+            // Esconde os de 6º a 10º lugar inicialmente
+            if (index >= 5) {
+                li.classList.add("rank-extra");
+                li.style.display = "none"; 
+            }
+
+            rankingList.appendChild(li);
+        }
+        
         index++;
     });
 
-    // NOVO: Lógica do botão "Ver Mais"
+    // ====================================================
+    // ATUALIZA O PERFIL COM A POSIÇÃO ENCONTRADA
+    // ====================================================
+    const rankDisplay = document.getElementById('user-rank-display');
+    if (rankDisplay) {
+        if (rankDoUsuario > 0) {
+            rankDisplay.innerText = `#${rankDoUsuario}`;
+        } else {
+            rankDisplay.innerText = "S/R"; // "Sem Ranking" se houver algum erro
+        }
+    }
+
+    // ====================================================
+    // LÓGICA DO BOTÃO "VER TOP 10" (Mantida igual ao seu original)
+    // ====================================================
     let btnToggle = document.getElementById("btn-toggle-ranking");
 
-    // Se o botão ainda não existir, nós o criamos
     if (!btnToggle) {
         btnToggle = document.createElement("button");
         btnToggle.id = "btn-toggle-ranking";
-
-        // Alguns estilos diretos no JS para ele combinar com o jogo (você pode mudar depois no CSS)
         btnToggle.style.marginTop = "15px";
         btnToggle.style.padding = "8px 15px";
         btnToggle.style.cursor = "pointer";
         btnToggle.style.borderRadius = "5px";
         btnToggle.style.border = "none";
-        btnToggle.style.backgroundColor = "#1e90ff"; // Azul do Termo
+        btnToggle.style.backgroundColor = "#1e90ff"; 
         btnToggle.style.color = "white";
         btnToggle.style.fontWeight = "bold";
         btnToggle.style.width = "100%";
         btnToggle.style.transition = "0.2s";
 
-        // Adiciona o botão logo abaixo da lista de ranking
         rankingContainer.appendChild(btnToggle);
     }
-
-    // Só mostra o botão se tivermos mais de 5 jogadores cadastrados
 
     btnToggle.style.display = "block";
     btnToggle.innerText = "Ver Top 10 ▼";
 
-    // Ação de clicar no botão
     btnToggle.onclick = () => {
-
         const extras = rankingList.querySelectorAll(".rank-extra");
+        if(extras.length === 0) return;
 
-        // Verifica se o primeiro extra está escondido
         const isHidden = extras[0].style.display === "none";
 
         extras.forEach(item => {
-            // Se estava escondido, tira o "none" (volta ao original do CSS), se não, esconde
             item.style.display = isHidden ? "" : "none";
         });
 
-        // Muda o texto e a setinha do botão
         btnToggle.innerText = isHidden ? "Ocultar ▲" : "Ver Top 10 ▼";
-        btnToggle.style.backgroundColor = isHidden ? "#3a3a3c" : "#1e90ff"; // Fica cinza quando expande
+        btnToggle.style.backgroundColor = isHidden ? "#3a3a3c" : "#1e90ff"; 
 
         const top10 = document.getElementById('topranking');
-        top10.innerText = isHidden ? " Top 10 Aura " : " Top 5 Aura ";
-
-
+        if(top10) top10.innerText = isHidden ? " Top 10 Aura " : " Top 5 Aura ";
     }
 }
 // ==========================================
@@ -298,25 +333,53 @@ let gameOver = false;
 const removeAcentos = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
 // 1. FUNÇÃO DE TROCAR DE MODO
+// Função para pintar o botão selecionado
+// Função para pintar o botão selecionado
+window.atualizarBotao = function(botaoClicado) {
+    // 1. Pega todos os botões de modo
+    const botoes = document.querySelectorAll('.mode-btn');
+    
+    // 2. Remove a classe 'active' (cor) de todos eles
+    botoes.forEach(btn => btn.classList.remove('active'));
+    
+    // 3. Adiciona a classe 'active' apenas no botão que foi clicado agora
+    botaoClicado.classList.add('active');
+};
+
+
 window.changeMode = function (mode) {
     if (currentMode === mode) return;
 
     currentMode = mode;
 
-    // Atualiza os botões visuais
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelector(`.mode-btn[onclick="changeMode('${mode}')"]`).classList.add('active');
-
     // Atualiza a classe do container para ajustar o CSS
     if (boardElement) boardElement.className = `mode-${mode}`;
 
-    // ... (o código antigo da função continua igual)
     if (mode === 'termo') { numBoards = 1; maxAttempts = 6; }
     else if (mode === 'dueto') { numBoards = 2; maxAttempts = 7; }
     else if (mode === 'quarteto') { numBoards = 4; maxAttempts = 9; }
 
     atualizarTelaEstatisticas(); // Atualiza o contador de partidas na tela
     verificarEIniciarJogo();     // Verifica se esse novo modo já estourou o limite e desenha o tabuleiro
+};
+
+window.changeMode = changeMode;
+
+// Abre um modal específico e escurece o fundo
+window.abrirModal = function(idModal) {
+    fecharTodosModais(); // Garante que fecha um antes de abrir o outro
+    const modal = document.getElementById(idModal);
+    if (modal) {
+        modal.style.setProperty('display', 'flex', 'important'); 
+    }
+};
+
+// Fecha todos os modais para voltar a ver apenas o jogo
+window.fecharTodosModais = function() {
+    const modais = document.querySelectorAll('.modal-overlay');
+    modais.forEach(modal => {
+        modal.style.setProperty('display', 'none', 'important');
+    });
 };
 
 
@@ -358,6 +421,8 @@ const keyboardLayout = [
     ["A", "S", "D", "F", "G", "H", "J", "K", "L", "⌫"],
     ["Z", "X", "C", "V", "B", "N", "M", "ENTER"],
 ];
+
+
 
 keyboardLayout.forEach((row) => {
     let rowDiv = document.createElement("div");
@@ -739,15 +804,16 @@ function deactivateRemainingRows(boardIndex, attemptIndex) {
         }
     }
 }
-// Começa da linha seguinte (attemptIndex + 1) até o final do tabuleiro
-for (let row = attemptIndex + 1; row < maxAttempts; row++) {
-    for (let col = 0; col < 5; col++) {
-        let tile = document.getElementById(`tile-${boardIndex}-${row}-${col}`);
-        if (tile) {
-            // Adiciona a classe que criamos no CSS
-            tile.classList.add('disabled-tile');
-            // Garante que o cursor 'selected' seja removido se estiver lá
-            tile.classList.remove('selected');
-        }
-    }
-}
+// SEU ARQUIVO DEVE TERMINAR AQUI! SEM NADA DEPOIS DESSA CHAVE.
+
+window.ativarModo = function(modo, botao) {
+    // 1. Muda a cor do botão clicado
+    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+    botao.classList.add('active');
+
+    // 2. Chama a sua função de mudar o jogo
+    if (window.changeMode) window.changeMode(modo);
+
+    // 3. Fecha o modal
+    if (window.fecharTodosModais) window.fecharTodosModais();
+};

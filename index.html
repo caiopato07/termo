@@ -9,7 +9,37 @@
 </head>
 
 <body>
-  <h1>TERMO</h1>
+  <header class="header-termo" id="menu-navegacao" style="display: none;">
+    <div class="header-left">
+      <button class="icon-btn" onclick="abrirModal('aba-modos')" title="Modos de Jogo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+          <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+        </svg>
+      </button>
+    </div>
+
+    <h1>TERMO</h1>
+
+    <div class="header-right">
+      <button class="icon-btn" onclick="abrirModal('aba-ranking')" title="Ranking">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+      </button>
+      
+      <button class="icon-btn" onclick="abrirModal('aba-perfil')" title="Perfil">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+      </button>
+    </div>
+  </header>
 
   <div id="auth-container" style="
         display: flex;
@@ -67,49 +97,99 @@
         "></div>
   </div>
 
-  <div id="user-info">
-    <h2 id="welcome-msg">Olá!</h2>
+  <nav id="menu-navegacao"
+    style="display: none; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; position: relative; z-index: 10;">
+    <button onclick="abrirModal('aba-modos')"
+      style="padding: 10px; cursor: pointer; border-radius: 5px; border: none; background: #3a3a3c; color: white; font-weight: bold;">
+      Modos</button>
 
-    <div class="user-stats">
-      <div class="stat-badge aura">
-        <span id="user-aura">0</span> Aura
+    <button onclick="abrirModal('aba-perfil')"
+      style="padding: 10px; cursor: pointer; border-radius: 5px; border: none; background: #3a3a3c; color: white; font-weight: bold;">
+      Perfil</button>
+    <button onclick="abrirModal('aba-ranking')"
+      style="padding: 10px; cursor: pointer; border-radius: 5px; border: none; background: #3a3a3c; color: white; font-weight: bold;">  
+      Ranking</button>
+  </nav>
+
+
+  <div id="aba-modos" class="modal-overlay" onclick="if(event.target === this) fecharTodosModais()"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;">
+
+    <div
+      style="background-color: #262626; padding: 40px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 20px; position: relative;">
+
+      <h3 style="margin: 0; color: white;">Escolha o Modo de Jogo</h3>
+
+      <div id="mode-selector" style="display: flex; gap: 10px;">
+        <button class="mode-btn active" onclick="ativarModo('termo', this)">Termo</button>
+        <button class="mode-btn" onclick="ativarModo('dueto', this)">Dueto</button>
+        <button class="mode-btn" onclick="ativarModo('quarteto', this)">Quarteto</button>
       </div>
-      <div class="stat-badge daily">
-        <span id="daily-count">0</span>/2 Hoje
-      </div>
+
+    </div>
+  </div>
+
+
+  <div id="aba-jogo" style="display: none; width: 100%; align-items: center; flex-direction: column;">
+
+    <div id="boards-container" class="mode-termo">
+      <div id="board-0" class="board"></div>
+      <div id="board-1" class="board hidden"></div>
+      <div id="board-2" class="board hidden"></div>
+      <div id="board-3" class="board hidden"></div>
     </div>
 
-    <button id="btnLogout">SAIR</button>
+    <div id="keyboard"></div>
+    <div id="message"></div>
   </div>
 
-  <div id="ranking-container"
-    style="display: none; margin-top: 40px; border-top: 1px solid #3a3a3c; padding-top: 20px; width: 100%; max-width: 350px;">
-    <h3 id="topranking" style="text-align: center; color: #bcff1f; margin-top: 0;"> Top 5 Aura </h3>
-    <ol id="ranking-list" style="padding-left: 20px; font-size: 1.1rem; line-height: 1.8;"></ol>
+  <div id="aba-perfil" class="modal-overlay" onclick="if(event.target === this) fecharTodosModais()"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;">
+
+    <div
+      style="background-color: #262626; padding: 40px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; gap: 15px; position: relative;">
+
+      <div id="user-info" style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+        <h2 id="welcome-msg" style="margin: 0; color: white;">Olá!</h2>
+
+        <div class="user-stats">
+    <div class="stat-badge aura">
+        <span>✨</span> <span id="user-aura-display">0</span> aura
+    </div>
+    
+    <div class="stat-badge rank">
+        <span>🏆</span> <span id="user-rank-display">#--</span>
+    </div>
+
+    <div class="stat-badge daily">
+        <span>🔥</span> <span class="daily-count">0</span> dias
+    </div>
+</div>
+
+        <button id="btnLogout"
+          style="padding: 10px 20px; cursor: pointer; background-color: #da385b; color: white; border: none; border-radius: 5px; font-weight: bold;">SAIR
+          DA CONTA</button>
+      </div>
+    </div>
   </div>
 
-  <button id="btnLogout" style="
-        display: none;
-        margin-bottom: 20px;
-        padding: 5px 15px;
-        cursor: pointer;
-      ">
-    Sair
-  </button>
-  <div id="mode-selector" class="sua-classe-de-estilo">
-    <button class="mode-btn active" onclick="changeMode('termo')">Termo</button>
-    <button class="mode-btn" onclick="changeMode('dueto')">Dueto</button>
-    <button class="mode-btn" onclick="changeMode('quarteto')">Quarteto</button>
-  </div>
+  <div id="aba-ranking" class="modal-overlay" onclick="if(event.target === this) fecharTodosModais()"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); z-index: 1000; justify-content: center; align-items: center;">
 
-  <div id="boards-container" class="mode-termo">
-    <div id="board-0" class="board"></div>
-    <div id="board-1" class="board hidden"></div>
-    <div id="board-2" class="board hidden"></div>
-    <div id="board-3" class="board hidden"></div>
+    <div
+      style="background-color: #262626; padding: 40px; border-radius: 10px; position: relative; width: 90%; max-width: 350px; display: flex; flex-direction: column; align-items: center;">
+
+      <div id="ranking-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <h3 id="topranking" style="text-align: center; color: #bcff1f; margin-top: 0; margin-bottom: 20px;"> Top 5 Aura
+        </h3>
+
+        <ol id="ranking-list"
+          style="padding: 0; margin: 0; font-size: 1.1rem; line-height: 1.8; color: white; display: flex; flex-direction: column; align-items: center; list-style-position: inside;">
+        </ol>
+      </div>
+
+    </div>
   </div>
-  <div id="keyboard"></div>
-  <div id="message"></div>
 
 
   <script src="PALAVRAS_TERMO.js"></script>

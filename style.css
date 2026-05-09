@@ -26,15 +26,62 @@ body {
     overflow-x: hidden;
 }
 
-h1 {
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
-    letter-spacing: 6px;
-    margin-bottom: 25px;
-    font-size: clamp(2rem, 5vw, 2.8rem);
+/* ================= CABEÇALHO E ÍCONES (Estilo Termo Original) ================= */
+.header-termo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Mantém o tamanho alinhado com o tabuleiro */
+    margin: 0 auto 25px auto;
+    padding: 10px 0;
+    border-bottom: 2px solid var(--border-color); /* Linha sutil embaixo de tudo */
+    box-sizing: border-box;
+}
+
+.header-termo h1 {
+    margin: 0;
+    padding: 0;
+    font-size: clamp(2rem, 5vw, 2.5rem);
     font-weight: 800;
+    letter-spacing: 6px;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
     text-align: center;
+    border-bottom: none; /* Removemos a borda antiga do H1 */
+}
+
+.header-left, .header-right {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* Estilo dos novos botões de ícone */
+.icon-btn {
+    background: transparent;
+    border: none;
+    color: #818384; /* Cinza clássico do termo */
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    transition: color 0.2s, background-color 0.2s, transform 0.1s;
+}
+
+.icon-btn:hover {
+    color: white; /* Acende ao passar o mouse */
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.icon-btn:active {
+    transform: scale(0.9); /* Efeitinho de clique */
+}
+
+/* Remove a sombra extra para ícones ficarem chapados/clean */
+.icon-btn svg {
+    filter: none;
 }
 
 /* ================= MENSAGEM FLUTUANTE ================= */
@@ -85,8 +132,7 @@ h1 {
 .mode-btn.active {
     background-color: var(--green-termo);
     border-color: var(--green-termo);
-    box-shadow: 0 0 10px rgba(67, 181, 160, 0.4); /* Brilho no botão ativo */
-}
+    box-shadow: 0 0 10px rgba(20, 94, 204, 0.5) !important;}
 
 .hidden {
     display: none !important;
@@ -464,7 +510,22 @@ button:active { transform: translateY(1px); }
     text-align: center;
 }
 
-.user-stats { display: flex; gap: 10px; font-size: 0.95rem; font-weight: bold; flex-wrap: wrap; justify-content: center; }
+/* Cor específica para o badge de ranking */
+.stat-badge.rank {
+    border-color: #a855f7; /* Roxo/Violeta */
+    color: #d8b4fe;
+    box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+/* Ajuste para que os badges não fiquem apertados */
+.user-stats {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
 .stat-badge {
     display: flex;
     align-items: center;
