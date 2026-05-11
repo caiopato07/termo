@@ -243,7 +243,7 @@ async function carregarRanking() {
 
         if (index < 10) {
             let li = document.createElement("li");
-            li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
+            li.innerHTML = `<strong>${nomeExibido}</strong>: ${userData.aura  } aura`;
 
             if (index >= 5) {
                 li.classList.add("rank-extra");
@@ -893,3 +893,4 @@ window.mostrarNotificacaoRanking = function(mensagem, tipo) {
         setTimeout(() => toast.remove(), 400); 
     }, 4000);
 };
+
