@@ -166,7 +166,7 @@ async function adicionarAura(valor) {
         });
 
         atualizarTelaEstatisticas();
-        carregarRanking(); // já atualiza ranking em tempo real
+        carregarRanking();
 
     } catch (e) {
         console.error("Erro ao atualizar aura:", e);
@@ -217,14 +217,16 @@ btnLogout.addEventListener("click", () => {
 });
 
 function atualizarTelaEstatisticas() {
-    if (userAuraSpan) userAuraSpan.innerText = userData.aura;
+    if (userAuraSpan) userAuraSpan.innerText = userData?.aura || 0;
     
     if (dailyCountSpan) {
         let jogadas = 0;
-        if (currentMode === 'termo') jogadas = userData.termoPlayed || 0;
-        if (currentMode === 'dueto') jogadas = userData.duetoPlayed || 0;
-        if (currentMode === 'quarteto') jogadas = userData.quartetoPlayed || 0;
-        dailyCountSpan.innerText = jogadas; // Mostra as jogadas do modo selecionado
+
+        if (currentMode === 'termo') jogadas = userData?.termoPlayed || 0;
+        if (currentMode === 'dueto') jogadas = userData?.duetoPlayed || 0;
+        if (currentMode === 'quarteto') jogadas = userData?.quartetoPlayed || 0;
+
+        dailyCountSpan.innerText = jogadas;
     }
 }
 
@@ -678,6 +680,7 @@ function checkAttempt() {
         for (let letter of targetArray) {
             targetLetterCount[letter] = (targetLetterCount[letter] || 0) + 1;
         }
+        
 
         // Primeira passada: Corretos
         for (let i = 0; i < 5; i++) {
@@ -760,7 +763,9 @@ function checkAttempt() {
             deactivateRemainingRows(b, currentAttempt);
             document.getElementById(`board-${b}`).classList.add("win-anim");
         }
+        
     }
+    
 
 // Verifica estado GLOBAL do jogo (se ganhou todos ou perdeu)
     let acertos = boardsCompleted.filter(acertou => acertou === true).length;
@@ -913,4 +918,44 @@ window.mostrarNotificacaoRanking = function(mensagem, tipo) {
         toast.style.animation = 'fadeOutUpToast 0.4s forwards'; // <- MUDOU AQUI
         setTimeout(() => toast.remove(), 400); 
     }, 4000);
+};
+
+// =========================
+// ATUALIZA DADOS DO FIREBASE
+// =========================
+async function atualizarDadosUsuario() {
+    if (!currentUserDocRef) return;
+
+    try {
+        const userSnap = await getDoc(currentUserDocRef);
+
+        if (userSnap.exists()) {
+            userData = userSnap.data();
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar dados:", e);
+    }
+}
+
+// =========================
+// MODAIS (ABRIR / FECHAR)
+// =========================
+window.abrirModal = async function(id) {
+    fecharTodosModais();
+
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = "flex";
+    }
+
+    // 🔥 ATUALIZA PERFIL COM DADOS REAIS
+    if (id === 'aba-perfil') {
+        await atualizarDadosUsuario();
+        atualizarTelaEstatisticas();
+    }
+};
+
+window.fecharTodosModais = function() {
+    const modais = document.querySelectorAll('.modal-overlay');
+    modais.forEach(m => m.style.display = 'none');
 };
