@@ -152,6 +152,27 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// =========================
+// SISTEMA DE AURA
+// =========================
+async function adicionarAura(valor) {
+    if (!currentUserDocRef || !userData) return;
+
+    userData.aura = (userData.aura || 0) + valor;
+
+    try {
+        await updateDoc(currentUserDocRef, {
+            aura: userData.aura
+        });
+
+        atualizarTelaEstatisticas();
+        carregarRanking(); // já atualiza ranking em tempo real
+
+    } catch (e) {
+        console.error("Erro ao atualizar aura:", e);
+    }
+}
+
 btnCadastro.addEventListener("click", () => {
     const user = usernameInput.value;
     const pass = passwordInput.value;
