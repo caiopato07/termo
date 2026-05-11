@@ -94,7 +94,7 @@ body {
 /* ================= MENSAGEM FLUTUANTE (CORRIGIDO) ================= */
 #message {
     position: fixed;
-    top: 20px; /* antes era 15% */
+    top: 80px; /* antes era 15% */
     left: 50%;
     transform: translateX(-50%);
     
