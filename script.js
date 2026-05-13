@@ -43,7 +43,7 @@ const boardElement = document.getElementById("boards-container");
 const keyboardDiv = document.getElementById("keyboard");
 
 const rankingContainer = document.getElementById("ranking-container");
-const userAuraSpan = document.getElementById("user-aura");
+const userAuraSpan = document.getElementById("user-aura-display");
 const dailyCountSpan = document.getElementById("daily-count");
 const rankingList = document.getElementById("ranking-list");
 
