@@ -350,6 +350,7 @@ let maxAttempts = 6;       // Limite de tentativas
 
 let targetWords = [];      // Array com as palavras do jogo atual
 let boardsCompleted = [];  // Array para saber quais tabuleiros já foram acertados
+let boardsWonAtAttempt = []; // Em qual tentativa cada tabuleiro foi vencido
 let currentAttempt = 0;
 let activeCol = 0;
 let currentGuess = ["", "", "", "", ""]; // Guarda as 5 letras da tentativa atual
@@ -491,6 +492,7 @@ function resetarTabuleiro() {
     // Escolhe as palavras sem repetição
     targetWords = [];
     boardsCompleted = [];
+    boardsWonAtAttempt = new Array(numBoards).fill(-1);
     for (let i = 0; i < numBoards; i++) {
         let rndWord = words[Math.floor(Math.random() * words.length)];
 
@@ -561,12 +563,21 @@ function verificarEIniciarJogo() {
         msgEl.style.display = "";
         msgEl.innerText = "";
 
-        resetarTabuleiro();
+        // Tenta restaurar partida em andamento antes de criar um jogo novo
+        buildBoardsDOM();
+        const restored = restaurarEstadoJogo();
+        if (!restored) {
+            resetarTabuleiro();
+        }
     }
 }
 
 async function finalizarPartida(ganhou, auraAmount) {
     if (!userData) return;
+
+    // Remove o estado salvo — a partida acabou, não há o que restaurar
+    const storageKey = `termoState_${currentMode}_${auth.currentUser?.uid}`;
+    localStorage.removeItem(storageKey);
 
     userData.aura = (userData.aura || 0) + auraAmount;
 
@@ -682,6 +693,7 @@ function updateGuess(col, letter) {
             if (tile) tile.innerText = letter;
         }
     }
+    salvarEstadoJogo();
 }
 
 // 9. VERIFICAÇÃO FINAL DA TENTATIVA (A MAGIA DOS MULTI-TABULEIROS)
@@ -806,6 +818,7 @@ function checkAttempt() {
         // Verifica se ganhou ESTE tabuleiro
         if (guessStr === targetWordClean) {
             boardsCompleted[b] = true;
+            boardsWonAtAttempt[b] = currentAttempt;
             deactivateRemainingRows(b, currentAttempt);
             document.getElementById(`board-${b}`).classList.add("win-anim");
         }
@@ -872,6 +885,7 @@ function checkAttempt() {
             setActiveColumn(0);
         }
     }
+    salvarEstadoJogo();
 } // Fim da função checkAttempt
 
 document.addEventListener("keydown", (e) => {
@@ -917,6 +931,152 @@ function deactivateRemainingRows(boardIndex, attemptIndex) {
 
 // Garante que o jogo comece limpo se o script recarregar
 console.log("Script carregado com sucesso!");
+
+// =========================
+// PERSISTÊNCIA ANTI-TRAPAÇA
+// Salva e restaura o estado da partida no localStorage
+// para que recarregar a página não dê uma palavra nova.
+// =========================
+
+function salvarEstadoJogo() {
+    if (!auth.currentUser || gameOver) return;
+
+    // Captura letras e cores de todos os tiles já revelados
+    const tiles = {};
+    for (let b = 0; b < numBoards; b++) {
+        for (let r = 0; r < maxAttempts; r++) {
+            for (let c = 0; c < 5; c++) {
+                const tile = document.getElementById(`tile-${b}-${r}-${c}`);
+                if (!tile) continue;
+                const colorClass = ['correct', 'present', 'absent'].find(cl => tile.classList.contains(cl)) || null;
+                if (tile.innerText || colorClass) {
+                    tiles[`${b}-${r}-${c}`] = { letter: tile.innerText, colorClass };
+                }
+            }
+        }
+    }
+
+    // Captura o estado visual de cada tecla
+    const keys = {};
+    document.querySelectorAll('.key').forEach(key => {
+        const letter = key.id.replace('key-', '');
+        const classes = ['correct', 'present', 'absent', 'tecla-dueto', 'tecla-quarteto'].filter(cl => key.classList.contains(cl));
+        const b0 = key.getAttribute('data-b0');
+        const b1 = key.getAttribute('data-b1');
+        const b2 = key.getAttribute('data-b2');
+        const b3 = key.getAttribute('data-b3');
+        if (classes.length || b0 || b1 || b2 || b3) {
+            keys[letter] = {
+                classes, b0, b1, b2, b3,
+                corEsq: key.style.getPropertyValue('--cor-esq'),
+                corDir: key.style.getPropertyValue('--cor-dir'),
+                cor1: key.style.getPropertyValue('--cor-1'),
+                cor2: key.style.getPropertyValue('--cor-2'),
+                cor3: key.style.getPropertyValue('--cor-3'),
+                cor4: key.style.getPropertyValue('--cor-4'),
+            };
+        }
+    });
+
+    const state = {
+        date: new Date().toISOString().split('T')[0],
+        mode: currentMode,
+        targetWords,
+        boardsCompleted,
+        boardsWonAtAttempt,
+        currentAttempt,
+        currentGuess,
+        gameOver,
+        tiles,
+        keys
+    };
+
+    try {
+        const storageKey = `termoState_${currentMode}_${auth.currentUser.uid}`;
+        localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch (e) {
+        console.warn("Não foi possível salvar estado:", e);
+    }
+}
+
+function restaurarEstadoJogo() {
+    if (!auth.currentUser) return false;
+
+    const storageKey = `termoState_${currentMode}_${auth.currentUser.uid}`;
+    const saved = localStorage.getItem(storageKey);
+    if (!saved) return false;
+
+    try {
+        const state = JSON.parse(saved);
+        const today = new Date().toISOString().split('T')[0];
+
+        // Descarta se for de outro dia ou se o jogo já terminou
+        if (state.date !== today || state.gameOver || state.mode !== currentMode) {
+            localStorage.removeItem(storageKey);
+            return false;
+        }
+
+        // Restaura variáveis globais
+        targetWords        = state.targetWords;
+        boardsCompleted    = state.boardsCompleted;
+        boardsWonAtAttempt = state.boardsWonAtAttempt || new Array(numBoards).fill(-1);
+        currentAttempt     = state.currentAttempt;
+        currentGuess       = state.currentGuess;
+        gameOver           = state.gameOver;
+
+        // Re-aplica letras e cores nos tiles
+        for (const [key, val] of Object.entries(state.tiles)) {
+            const tile = document.getElementById(`tile-${key}`);
+            if (!tile) continue;
+            tile.innerText = val.letter;
+            if (val.colorClass) tile.classList.add(val.colorClass);
+        }
+
+        // Re-aplica cores no teclado
+        for (const [letter, val] of Object.entries(state.keys)) {
+            const keyBtn = document.getElementById(`key-${letter}`);
+            if (!keyBtn) continue;
+            val.classes.forEach(cl => keyBtn.classList.add(cl));
+            if (val.b0) keyBtn.setAttribute('data-b0', val.b0);
+            if (val.b1) keyBtn.setAttribute('data-b1', val.b1);
+            if (val.b2) keyBtn.setAttribute('data-b2', val.b2);
+            if (val.b3) keyBtn.setAttribute('data-b3', val.b3);
+            if (val.corEsq) keyBtn.style.setProperty('--cor-esq', val.corEsq);
+            if (val.corDir) keyBtn.style.setProperty('--cor-dir', val.corDir);
+            if (val.cor1)   keyBtn.style.setProperty('--cor-1', val.cor1);
+            if (val.cor2)   keyBtn.style.setProperty('--cor-2', val.cor2);
+            if (val.cor3)   keyBtn.style.setProperty('--cor-3', val.cor3);
+            if (val.cor4)   keyBtn.style.setProperty('--cor-4', val.cor4);
+        }
+
+        // Restaura animações de vitória e desativa linhas de tabuleiros já concluídos
+        for (let b = 0; b < numBoards; b++) {
+            if (boardsCompleted[b] && boardsWonAtAttempt[b] >= 0) {
+                document.getElementById(`board-${b}`)?.classList.add("win-anim");
+                deactivateRemainingRows(b, boardsWonAtAttempt[b]);
+            }
+        }
+
+        // Reescreve as letras já digitadas na linha atual
+        for (let c = 0; c < 5; c++) {
+            for (let b = 0; b < numBoards; b++) {
+                if (!boardsCompleted[b]) {
+                    const tile = document.getElementById(`tile-${b}-${currentAttempt}-${c}`);
+                    if (tile) tile.innerText = currentGuess[c];
+                }
+            }
+        }
+
+        setActiveColumn(0);
+        console.log("Estado da partida restaurado com sucesso.");
+        return true;
+
+    } catch (e) {
+        console.error("Erro ao restaurar estado:", e);
+        localStorage.removeItem(storageKey);
+        return false;
+    }
+}
 
 window.ativarModo = function(modo, botao) {
     // 1. Muda a cor do botão clicado
