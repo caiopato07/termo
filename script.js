@@ -43,7 +43,7 @@ const boardElement = document.getElementById("boards-container");
 const keyboardDiv = document.getElementById("keyboard");
 
 const rankingContainer = document.getElementById("ranking-container");
-const userAuraSpan = document.getElementById("user-aura-display");
+const userAuraSpan = document.getElementById("user-aura");
 const dailyCountSpan = document.getElementById("daily-count");
 const rankingList = document.getElementById("ranking-list");
 
@@ -152,6 +152,27 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// =========================
+// SISTEMA DE AURA
+// =========================
+async function adicionarAura(valor) {
+    if (!currentUserDocRef || !userData) return;
+
+    userData.aura = (userData.aura || 0) + valor;
+
+    try {
+        await updateDoc(currentUserDocRef, {
+            aura: userData.aura
+        });
+
+        atualizarTelaEstatisticas();
+        carregarRanking();
+
+    } catch (e) {
+        console.error("Erro ao atualizar aura:", e);
+    }
+}
+
 btnCadastro.addEventListener("click", () => {
     const user = usernameInput.value;
     const pass = passwordInput.value;
@@ -196,14 +217,16 @@ btnLogout.addEventListener("click", () => {
 });
 
 function atualizarTelaEstatisticas() {
-    if (userAuraSpan) userAuraSpan.innerText = userData.aura;
+    if (userAuraSpan) userAuraSpan.innerText = userData?.aura || 0;
     
     if (dailyCountSpan) {
         let jogadas = 0;
-        if (currentMode === 'termo') jogadas = userData.termoPlayed || 0;
-        if (currentMode === 'dueto') jogadas = userData.duetoPlayed || 0;
-        if (currentMode === 'quarteto') jogadas = userData.quartetoPlayed || 0;
-        dailyCountSpan.innerText = jogadas; // Mostra as jogadas do modo selecionado
+
+        if (currentMode === 'termo') jogadas = userData?.termoPlayed || 0;
+        if (currentMode === 'dueto') jogadas = userData?.duetoPlayed || 0;
+        if (currentMode === 'quarteto') jogadas = userData?.quartetoPlayed || 0;
+
+        dailyCountSpan.innerText = jogadas;
     }
 }
 
@@ -243,7 +266,7 @@ async function carregarRanking() {
 
         if (index < 10) {
             let li = document.createElement("li");
-            li.innerHTML = `<strong>${nomeExibido}</strong>: ${userData.aura  } aura`;
+            li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
 
             if (index >= 5) {
                 li.classList.add("rank-extra");
@@ -657,6 +680,7 @@ function checkAttempt() {
         for (let letter of targetArray) {
             targetLetterCount[letter] = (targetLetterCount[letter] || 0) + 1;
         }
+        
 
         // Primeira passada: Corretos
         for (let i = 0; i < 5; i++) {
@@ -739,7 +763,9 @@ function checkAttempt() {
             deactivateRemainingRows(b, currentAttempt);
             document.getElementById(`board-${b}`).classList.add("win-anim");
         }
+        
     }
+    
 
 // Verifica estado GLOBAL do jogo (se ganhou todos ou perdeu)
     let acertos = boardsCompleted.filter(acertou => acertou === true).length;
@@ -894,3 +920,42 @@ window.mostrarNotificacaoRanking = function(mensagem, tipo) {
     }, 4000);
 };
 
+// =========================
+// ATUALIZA DADOS DO FIREBASE
+// =========================
+async function atualizarDadosUsuario() {
+    if (!currentUserDocRef) return;
+
+    try {
+        const userSnap = await getDoc(currentUserDocRef);
+
+        if (userSnap.exists()) {
+            userData = userSnap.data();
+        }
+    } catch (e) {
+        console.error("Erro ao atualizar dados:", e);
+    }
+}
+
+// =========================
+// MODAIS (ABRIR / FECHAR)
+// =========================
+window.abrirModal = async function(id) {
+    fecharTodosModais();
+
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.style.display = "flex";
+    }
+
+    // 🔥 ATUALIZA PERFIL COM DADOS REAIS
+    if (id === 'aba-perfil') {
+        await atualizarDadosUsuario();
+        atualizarTelaEstatisticas();
+    }
+};
+
+window.fecharTodosModais = function() {
+    const modais = document.querySelectorAll('.modal-overlay');
+    modais.forEach(m => m.style.display = 'none');
+};
