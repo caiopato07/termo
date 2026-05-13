@@ -91,22 +91,28 @@ body {
     filter: none;
 }
 
-/* ================= MENSAGEM FLUTUANTE ================= */
+/* ================= MENSAGEM FLUTUANTE (CORRIGIDO) ================= */
 #message {
     position: fixed;
-    top: 15%;
+    top: 80px; /* antes era 15% */
     left: 50%;
     transform: translateX(-50%);
-    z-index: 9999;
+    
+    z-index: 500; /* ANTES: 9999 (BUG) */
+
     background-color: rgba(18, 18, 19, 0.95);
     border: 1px solid #3a3a3c;
     padding: 14px 24px;
     border-radius: 8px;
+
     font-weight: bold;
     font-size: 1.1rem;
     text-align: center;
+
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-    pointer-events: none;
+
+    pointer-events: none; /* 🔥 NÃO BLOQUEIA CLIQUES */
+
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease-in-out;
