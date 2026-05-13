@@ -9,7 +9,8 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import {
     getFirestore, doc, setDoc, getDoc, updateDoc,
-    collection, query, orderBy, limit, getDocs
+    collection, query, orderBy, limit, getDocs,
+    getCountFromServer, where
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -155,6 +156,35 @@ onAuthStateChanged(auth, async (user) => {
 // =========================
 // SISTEMA DE AURA
 // =========================
+
+const coresTeclado = {
+    'certa': 'var(--cor-certa)',
+    'lugar-errado': 'var(--cor-lugar-errado)',
+    'errada': 'var(--cor-errada)',
+    'padrao': 'var(--cor-padrao)',
+    'correct': 'var(--cor-certa)', // Verde
+    'present': 'var(--cor-lugar-errado)', // Amarelo
+    'absent': 'var(--cor-errada)',  // Cinza escuro
+    'padrao': 'var(--cor-certa)'   // Cinza teclado
+};
+
+window.pintarTeclaQuarteto = function(letra, s1, s2, s3, s4) {
+    // Busca direta pelo ID que você criou no script.js
+    const teclaAlvo = document.getElementById(`key-${letra.toUpperCase()}`);
+
+    if (teclaAlvo) {
+        // Remove classes de outros modos para não dar conflito
+        teclaAlvo.classList.remove('tecla-dueto');
+        teclaAlvo.classList.add('tecla-quarteto');
+        
+        // Injeta as 4 cores
+        teclaAlvo.style.setProperty('--cor-1', coresTeclado[s1] || coresTeclado['padrao']);
+        teclaAlvo.style.setProperty('--cor-2', coresTeclado[s2] || coresTeclado['padrao']);
+        teclaAlvo.style.setProperty('--cor-3', coresTeclado[s3] || coresTeclado['padrao']);
+        teclaAlvo.style.setProperty('--cor-4', coresTeclado[s4] || coresTeclado['padrao']);
+    }
+};
+
 async function adicionarAura(valor) {
     if (!currentUserDocRef || !userData) return;
 
@@ -328,37 +358,40 @@ let gameOver = false;
 const removeAcentos = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
 
 
-// Dicionário para traduzir o status do seu jogo para as cores do CSS
-const coresTeclado = {
-    'certa': 'var(--cor-certa)',        // Verde
-    'lugar-errado': 'var(--cor-lugar-errado)', // Amarelo
-    'errada': 'var(--cor-errada)',      // Cinza escuro
-    'padrao': 'var(--cor-padrao)'       // Cinza normal
-};
 
 // Função para pintar a tecla dividida no modo DUETO
 window.pintarTeclaDueto = function(letra, statusEsquerda, statusDireita) {
-    // Procura o botão no seu teclado que tenha a letra específica
-    // (Ajuste o seletor abaixo caso as suas teclas tenham classes/IDs diferentes)
-    const teclas = document.querySelectorAll('.keyboard-button'); 
-    let teclaAlvo = null;
-
-    teclas.forEach(btn => {
-        if (btn.innerText.trim().toUpperCase() === letra.toUpperCase()) {
-            teclaAlvo = btn;
-        }
-    });
+    // Busca direto pelo ID que o teclado já usa (key-A, key-B, etc.)
+    const teclaAlvo = document.getElementById(`key-${letra}`);
 
     if (teclaAlvo) {
-        // Adiciona a classe que ativa o gradiente
         teclaAlvo.classList.add('tecla-dueto');
-        
-        // Injeta as cores da esquerda e da direita usando variáveis do CSS
         teclaAlvo.style.setProperty('--cor-esq', coresTeclado[statusEsquerda] || coresTeclado['padrao']);
         teclaAlvo.style.setProperty('--cor-dir', coresTeclado[statusDireita] || coresTeclado['padrao']);
     }
 };
+// Função para Pintar o Quarteto (ou Dueto adaptado)
+window.pintarTeclaMultijogo = function(letra, status1, status2, status3 = null, status4 = null) {
+    const tecla = document.getElementById(`key-${letra.toUpperCase()}`);
+    if (!tecla) return;
 
+    // Se só passarmos 2 status, usamos o modo Dueto
+    if (status3 === null) {
+        tecla.classList.remove('tecla-quarteto');
+        tecla.classList.add('tecla-dueto');
+        tecla.style.setProperty('--cor-esq', coresTeclado[status1] || coresTeclado['padrao']);
+        tecla.style.setProperty('--cor-dir', coresTeclado[status2] || coresTeclado['padrao']);
+    } 
+    // Se passarmos os 4, usamos o modo Quarteto (Quadrantes)
+    else {
+        tecla.classList.remove('tecla-dueto');
+        tecla.classList.add('tecla-quarteto');
+        tecla.style.setProperty('--cor-1', coresTeclado[status1] || coresTeclado['padrao']);
+        tecla.style.setProperty('--cor-2', coresTeclado[status2] || coresTeclado['padrao']);
+        tecla.style.setProperty('--cor-3', coresTeclado[status3] || coresTeclado['padrao']);
+        tecla.style.setProperty('--cor-4', coresTeclado[status4] || coresTeclado['padrao']);
+    }
+};
 // 1. FUNÇÃO DE TROCAR DE MODO
 // Função para pintar o botão selecionado
 // Função para pintar o botão selecionado
@@ -388,25 +421,6 @@ window.changeMode = function (mode) {
 
     atualizarTelaEstatisticas(); // Atualiza o contador de partidas na tela
     verificarEIniciarJogo();     // Verifica se esse novo modo já estourou o limite e desenha o tabuleiro
-};
-
-window.changeMode = changeMode;
-
-// Abre um modal específico e escurece o fundo
-window.abrirModal = function(idModal) {
-    fecharTodosModais(); // Garante que fecha um antes de abrir o outro
-    const modal = document.getElementById(idModal);
-    if (modal) {
-        modal.style.setProperty('display', 'flex', 'important'); 
-    }
-};
-
-// Fecha todos os modais para voltar a ver apenas o jogo
-window.fecharTodosModais = function() {
-    const modais = document.querySelectorAll('.modal-overlay');
-    modais.forEach(modal => {
-        modal.style.setProperty('display', 'none', 'important');
-    });
 };
 
 
@@ -498,13 +512,19 @@ function resetarTabuleiro() {
     // Limpa teclado e animações
     // Limpa teclado e animações
     document.querySelectorAll('.key').forEach(key => {
-        key.classList.remove("correct", "present", "absent", "tecla-dueto"); // Adicionado "tecla-dueto"
+        key.classList.remove("correct", "present", "absent", "tecla-dueto", "tecla-quarteto");
         
-        // Remove a memória de cores dos lados esquerdo e direito
+        // Remove a memória de cores de todos os tabuleiros
         key.removeAttribute("data-b0");
         key.removeAttribute("data-b1");
+        key.removeAttribute("data-b2");
+        key.removeAttribute("data-b3");
         key.style.removeProperty('--cor-esq');
         key.style.removeProperty('--cor-dir');
+        key.style.removeProperty('--cor-1');
+        key.style.removeProperty('--cor-2');
+        key.style.removeProperty('--cor-3');
+        key.style.removeProperty('--cor-4');
     });
     for (let b = 0; b < 4; b++) {
         let boardDiv = document.getElementById(`board-${b}`);
@@ -714,11 +734,10 @@ function checkAttempt() {
             }
 
             // Atualiza o Teclado
-            // Atualiza o Teclado
             const keyBtn = document.getElementById(`key-${letter}`);
             if (keyBtn) {
-                // Se for Termo ou Quarteto, usa a lógica original por enquanto
-                if (currentMode === 'termo' || currentMode === 'quarteto') {
+                // Modo TERMO: cor única e sólida por tecla
+                if (currentMode === 'termo') {
                     if (colorClass === "correct") {
                         keyBtn.classList.remove("present", "absent");
                         keyBtn.classList.add("correct");
@@ -729,7 +748,7 @@ function checkAttempt() {
                         keyBtn.classList.add("absent");
                     }
                 } 
-                // Se for DUETO, aplica a mágica das cores divididas
+                // Modo DUETO: tecla dividida ao meio (esquerda = board 0, direita = board 1)
                 else if (currentMode === 'dueto') {
                     // Traduz o nome da classe em inglês para o nosso dicionário
                     let statusNome = 'padrao';
@@ -754,6 +773,33 @@ function checkAttempt() {
 
                     // Chama a função que pinta a divisão!
                     window.pintarTeclaDueto(letter, statusEsq, statusDir);
+                }
+                // Modo QUARTETO: tecla dividida em 4 quadrantes (um por tabuleiro)
+                else if (currentMode === 'quarteto') {
+                    // Traduz o nome da classe em inglês para o nosso dicionário
+                    let statusNome = 'padrao';
+                    if (colorClass === 'correct') statusNome = 'certa';
+                    else if (colorClass === 'present') statusNome = 'lugar-errado';
+                    else if (colorClass === 'absent') statusNome = 'errada';
+
+                    // Puxa a cor que já estava guardada para ESTE tabuleiro na tecla
+                    let statusSalvo = keyBtn.getAttribute(`data-b${b}`) || 'padrao';
+
+                    // Só atualiza se a nova cor for "melhor" (Verde > Amarelo > Cinza)
+                    if (statusNome === 'certa' ||
+                       (statusNome === 'lugar-errado' && statusSalvo !== 'certa') ||
+                       (statusNome === 'errada' && statusSalvo === 'padrao')) {
+                        keyBtn.setAttribute(`data-b${b}`, statusNome);
+                    }
+
+                    // Pega a melhor cor de cada quadrante (b0=sup-esq, b1=sup-dir, b2=inf-esq, b3=inf-dir)
+                    let s0 = keyBtn.getAttribute('data-b0') || 'padrao';
+                    let s1 = keyBtn.getAttribute('data-b1') || 'padrao';
+                    let s2 = keyBtn.getAttribute('data-b2') || 'padrao';
+                    let s3 = keyBtn.getAttribute('data-b3') || 'padrao';
+
+                    // Chama a função que pinta os 4 quadrantes!
+                    window.pintarTeclaQuarteto(letter, s0, s1, s2, s3);
                 }
             }}
 
@@ -868,18 +914,6 @@ function deactivateRemainingRows(boardIndex, attemptIndex) {
         }
     }
 }
-
-// Esta é a função que estava cortada no seu código
-window.ativarModo = function(modo, botao) {
-    // 1. Muda a cor do botão clicado (UI)
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    if (botao) {
-        botao.classList.add('active');
-    }
-
-    // 2. Chama a lógica de trocar o modo de jogo
-    window.changeMode(modo);
-};
 
 // Garante que o jogo comece limpo se o script recarregar
 console.log("Script carregado com sucesso!");

@@ -236,16 +236,25 @@ body {
 /* Variáveis com as cores oficiais do jogo para facilitar */
 
 
-/* Classe mágica para o Dueto (Divide exatamente no meio) */
+
+/* Configuração para Dueto (Divisão Vertical: esquerda = board 0, direita = board 1) */
 .tecla-dueto {
-    /* O linear-gradient pinta da esquerda para a direita cortando no 50% */
-    background: linear-gradient(to right, var(--cor-esq, var(--cor-padrao)) 50%, var(--cor-dir, var(--cor-padrao)) 50%) !important;
-    
-    /* Remove sombras ou bordas antigas para ficar limpo igual ao original */
-    border: none !important;
-    box-shadow: none !important;
-    color: white !important;
+    background: linear-gradient(to right, 
+        var(--cor-esq) 0%, var(--cor-esq) 50%, 
+        var(--cor-dir) 50%, var(--cor-dir) 100%) !important;
 }
+
+/* Configuração para Quarteto (4 Quadrantes: sup-esq, sup-dir, inf-esq, inf-dir) */
+.tecla-quarteto {
+    background: 
+        linear-gradient(var(--cor-1), var(--cor-1)) 0 0 / 50% 50% no-repeat,
+        linear-gradient(var(--cor-2), var(--cor-2)) 100% 0 / 50% 50% no-repeat,
+        linear-gradient(var(--cor-3), var(--cor-3)) 0 100% / 50% 50% no-repeat,
+        linear-gradient(var(--cor-4), var(--cor-4)) 100% 100% / 50% 50% no-repeat !important;
+    background-color: transparent !important;
+}
+
+
 
 #boards-container.mode-dueto {
     flex-wrap: nowrap;
