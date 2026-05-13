@@ -239,11 +239,7 @@ body {
 /* Classe mágica para o Dueto (Divide exatamente no meio) */
 .tecla-dueto {
     /* O linear-gradient pinta da esquerda para a direita cortando no 50% */
-    background: linear-gradient(
-        to right, 
-        var(--cor-esq, var(--cor-padrao)) 50%, 
-        var(--cor-dir, var(--cor-padrao)) 50%
-    ) !important;
+    background: linear-gradient(to right, var(--cor-esq, var(--cor-padrao)) 50%, var(--cor-dir, var(--cor-padrao)) 50%) !important;
     
     /* Remove sombras ou bordas antigas para ficar limpo igual ao original */
     border: none !important;

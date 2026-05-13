@@ -43,7 +43,7 @@ const boardElement = document.getElementById("boards-container");
 const keyboardDiv = document.getElementById("keyboard");
 
 const rankingContainer = document.getElementById("ranking-container");
-const userAuraSpan = document.getElementById("user-aura");
+const userAuraSpan = document.getElementById("user-aura-display");
 const dailyCountSpan = document.getElementById("daily-count");
 const rankingList = document.getElementById("ranking-list");
 
@@ -266,7 +266,7 @@ async function carregarRanking() {
 
         if (index < 10) {
             let li = document.createElement("li");
-            li.innerHTML = `<strong>${nomeExibido}</strong>: ${data.aura} aura`;
+            li.innerHTML = `<strong>${nomeExibido}</strong>: ${userData.aura  } aura`;
 
             if (index >= 5) {
                 li.classList.add("rank-extra");
