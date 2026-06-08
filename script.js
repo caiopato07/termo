@@ -356,8 +356,10 @@ let activeCol = 0;
 let currentGuess = ["", "", "", "", ""]; // Guarda as 5 letras da tentativa atual
 let gameOver = false;
 
-const removeAcentos = (str) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-
+const removeAcentos = (str) => {
+    if (!str) return ""; // Escudo: se a palavra não existir, devolve vazio e não quebra o site
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+};
 
 
 // Função para pintar a tecla dividida no modo DUETO
@@ -494,11 +496,11 @@ function resetarTabuleiro() {
     boardsCompleted = [];
     boardsWonAtAttempt = new Array(numBoards).fill(-1);
     for (let i = 0; i < numBoards; i++) {
-        let rndWord = words[Math.floor(Math.random() * words.length)];
+        let rndWord = window.words[Math.floor(Math.random() * words.length)];
 
         // Garante palavras diferentes se o dicionário for grande
         while (targetWords.includes(rndWord) && words.length >= numBoards) {
-            rndWord = words[Math.floor(Math.random() * words.length)];
+            rndWord = window.words[Math.floor(Math.random() * words.length)];
         }
         targetWords.push(rndWord);
         boardsCompleted.push(false); // Nenhum foi acertado ainda
@@ -651,7 +653,7 @@ function handleInput(key) {
             isValidWord = wordsAc.some(w => removeAcentos(w).trim().toUpperCase() === guessStr.toUpperCase());
         }
         if (!isValidWord) {
-            isValidWord = words.some(w => removeAcentos(w).trim().toUpperCase() === guessStr.toUpperCase());
+            isValidWord = window.words.some(w => removeAcentos(w).trim().toUpperCase() === guessStr.toUpperCase());
         }
 
         if (guessStr.length === 5 && isValidWord) {
@@ -746,6 +748,7 @@ function checkAttempt() {
             }
 
             // Atualiza o Teclado
+            
             const keyBtn = document.getElementById(`key-${letter}`);
             if (keyBtn) {
                 // Modo TERMO: cor única e sólida por tecla
