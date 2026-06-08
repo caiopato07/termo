@@ -8622,4 +8622,4 @@ ZURCA
 ZURPA
 `;
 
-const wordsAc = textoBruto1.split(/\s+/).filter(Boolean);
+window.wordsAc =  textoBruto1.split(/\s+/).filter(Boolean);

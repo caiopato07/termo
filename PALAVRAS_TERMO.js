@@ -1029,4 +1029,4 @@ ZORRO
 ZUMBI
 `;
 
-const words = textoBruto.split(/\s+/).filter(Boolean);
+window.words = textoBruto.split(/\s+/).filter(Boolean);
